@@ -1,42 +1,51 @@
 <?php
+// Démarrage de la session pour gérer l'état d'authentification
 session_start();
 
-// ── Connexion MySQL directe ──────────────────────────────────
+// ── Connexion MySQL directe (PDO) ──────────────────────────────────
+// Paramètres de connexion (à adapter selon l'environnement)
 $host   = '127.0.0.1';
 $dbname = 'smarthome';
 $user   = 'root';
 $pass   = 'root';
 
 try {
+    // Création d'un nouvel objet PDO pour interagir avec la BDD
     $pdo = new PDO("mysql:host=$host;dbname=$dbname;charset=utf8mb4", $user, $pass, [
         PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
         PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
     ]);
     
-    // Récupération de la recherche si elle existe
+    // Récupération du paramètre de recherche depuis la query string (GET)
     $search = isset($_GET['search']) ? trim($_GET['search']) : '';
     
     if (!empty($search)) {
-        // Recherche par titre, quartier ou description
+        // Prépare une requête pour rechercher dans plusieurs colonnes (titre, quartier, description)
         $stmt = $pdo->prepare('SELECT * FROM v_annonces_disponibles WHERE titre LIKE ? OR quartier LIKE ? OR description LIKE ? ORDER BY cree_le DESC');
         $stmt->execute(["%$search%", "%$search%", "%$search%"]);
-        $annonces = $stmt->fetchAll();
+        $annonces = $stmt->fetchAll(); // récupère les résultats correspondants
     } else {
+        // Si pas de recherche, récupère toutes les annonces disponibles
         $annonces = $pdo->query('SELECT * FROM v_annonces_disponibles ORDER BY cree_le DESC')->fetchAll();
     }
 } catch (PDOException $e) {
+    // En cas d'erreur de connexion ou de requête, retourner un tableau vide d'annonces
     $annonces = [];
 }
 
+// Booléen indiquant si l'utilisateur est connecté (présence d'un user_id en session)
 $userConnecte = !empty($_SESSION['user_id']);
 ?>
 <!DOCTYPE html>
+<!-- Page d'accueil affichant la liste des annonces et la barre de recherche -->
 <html lang="fr">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>SmartHome — Trouvez votre logement intelligemment</title>
+  <!-- Google Fonts -->
   <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet"/>
+  <!-- Feuille de style globale -->
   <link rel="stylesheet" href="style.css">
   
   <style>
@@ -131,6 +140,7 @@ $userConnecte = !empty($_SESSION['user_id']);
  
 <body>
  
+<!-- Barre de navigation principale -->
 <nav>
   <a href="index.php" class="nav-logo">🏠 Smart<span>Home</span></a>
   <ul class="nav-links">
@@ -139,42 +149,54 @@ $userConnecte = !empty($_SESSION['user_id']);
     <li><a href="#footer-contact">Contacts</a></li>
     
     <?php if ($userConnecte): ?>
+      <!-- Affiche le prénom si présent en session, sinon un point d'exclamation -->
       <?php $nomAffichage = !empty($_SESSION['user_prenom']) ? ' ' . htmlspecialchars($_SESSION['user_prenom']) : ' !' ?>
       <li><span class="user-welcome">Bonjour<?= $nomAffichage ?></span></li>
+      <!-- Lien de déconnexion -->
       <li><a href="logout.php" class="nav-logout">Se déconnecter</a></li>
     <?php else: ?>
+      <!-- Lien vers la zone d'inscription/connexion lorsque non connecté -->
       <li><a href="#cta" class="nav-cta">Mon Compte</a></li>
     <?php endif; ?>
   </ul>
 </nav>
 
+<!-- Section principale contenant la recherche et les annonces -->
 <section style="max-width:1200px; margin: 120px auto 40px; padding: 0 20px;">
   
   <div style="text-align: center; margin-bottom: 40px;">
     <h2 style="font-family:'Syne'; font-size: 2.5rem; margin-bottom: 10px; color: #0d1f1c;">Annonces disponibles</h2>
     <p style="color: #637470; font-family:'DM Sans'; margin-bottom: 25px;">Trouvez le bien idéal parmi nos logements vérifiés</p>
     
+    <!-- Barre de recherche GET -->
     <div class="search-container">
       <form action="index.php" method="GET" class="search-form">
+        <!-- Valeur du champ préremplie avec la recherche actuelle (sécurisée) -->
         <input type="text" name="search" class="search-input" placeholder="Rechercher par ville, quartier, mot-clé..." value="<?= htmlspecialchars($search) ?>">
         <button type="submit" class="btn-search">Rechercher</button>
       </form>
       <?php if (!empty($search)): ?>
+        <!-- Lien pour réinitialiser la recherche (affiche toutes les annonces) -->
         <a href="index.php" class="clear-search">❌ Réinitialiser la recherche</a>
       <?php endif; ?>
     </div>
   </div>
 
+  <!-- Si aucune annonce trouvée, afficher un message adapté -->
   <?php if (empty($annonces)): ?>
     <div style="text-align: center; padding: 40px; background: #fff; border-radius: 20px; border: 1px dashed #e2e8f0;">
       <p style="color: #637470; font-size: 1.1rem;">Aucune annonce ne correspond à votre recherche "<strong><?= htmlspecialchars($search) ?></strong>".</p>
     </div>
   <?php else: ?>
+    <!-- Affichage en grille des annonces récupérées depuis la base -->
     <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 30px;">
       <?php foreach ($annonces as $a): ?>
+        <!-- Carte annonce individuelle -->
         <div style="background:#fff; border:1px solid #e2e8f0; border-radius:20px; overflow:hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.02);">
+          <!-- Image (utilise Unsplash ou image par défaut si absent) -->
           <div style="height:200px; background-size:cover; background-position:center; background-image: url('https://images.unsplash.com/photo-<?= !empty($a['image_unsplash']) ? $a['image_unsplash'] : '1502672260266-1c1ef2d93688' ?>?w=600&q=80');"></div>
           <div style="padding: 20px;">
+            <!-- Titre et prix (sécurisés pour éviter XSS) -->
             <h3 style="font-family:'Syne'; font-size:1.2rem; margin-bottom:10px;"><?= htmlspecialchars($a['titre']) ?></h3>
             <p style="color:#637470; margin-bottom:15px; font-size:0.95rem;"><?= number_format($a['loyer'], 0, ',', ' ') ?> €/mois</p>
             <a href="annonce.php?id=<?= $a['id'] ?>" style="color:#00b894; font-weight:600; text-decoration:none;">Voir les détails →</a>
@@ -186,6 +208,7 @@ $userConnecte = !empty($_SESSION['user_id']);
   
 </section>
  
+<!-- Section CTA pour inscription/connexion -->
 <section class="cta-section" id="cta">
   <span class="section-tag">Rejoignez-nous</span>
   
@@ -205,6 +228,7 @@ $userConnecte = !empty($_SESSION['user_id']);
   <?php endif; ?>
 </section>
 
+<!-- Footer avec navigation et contacts -->
 <footer id="footer-contact">
   <div class="footer-brand">
     <a href="#" class="nav-logo">🏠 SmartHome<span> </span></a>
@@ -224,10 +248,10 @@ $userConnecte = !empty($_SESSION['user_id']);
   </div>
 </footer>
  
+<!-- Bas de page -->
 <div class="footer-bottom">
   © 2026 SmartHome — Tous droits réservés
 </div>
 
-<script src="script.js"></script>
 </body>
 </html>

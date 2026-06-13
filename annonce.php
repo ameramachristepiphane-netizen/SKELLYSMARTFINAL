@@ -1,30 +1,35 @@
 <?php
+// Démarre la session pour gérer l'état utilisateur
 session_start();
 
-// ── Connexion MySQL directe ──────────────────────────────────
+// ── Connexion MySQL (PDO) ────────────────────────────────────
+// Paramètres de connexion (adapter selon l'environnement)
 $host   = '127.0.0.1';
 $dbname = 'smarthome';
 $user   = 'root';
 $pass   = 'root';
 
+// Création de l'objet PDO avec gestion des exceptions
 try {
     $pdo = new PDO("mysql:host=$host;dbname=$dbname;charset=utf8mb4", $user, $pass, [
         PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
         PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
     ]);
 } catch (PDOException $e) {
+    // En cas d'erreur de connexion, on affiche un message générique
     die("Erreur de connexion à la base de données.");
 }
 
-// Vérification et récupération de l'ID de l'annonce
+// Récupère l'ID de l'annonce passée en paramètre GET (cast en int pour sécurité)
 $idAnnonce = isset($_GET['id']) ? (int)$_GET['id'] : 0;
 
+// Si l'ID n'est pas valide, redirige vers la page d'accueil
 if ($idAnnonce <= 0) {
     header('Location: index.php');
     exit;
 }
 
-// Récupération des détails de l'annonce
+// Prépare et exécute la requête pour récupérer les détails de l'annonce
 $stmt = $pdo->prepare('
     SELECT a.*, v.nom AS ville_nom, v.code_postal, CONCAT(u.prenom, " ", u.nom) AS proprietaire_nom 
     FROM annonces a
@@ -35,14 +40,17 @@ $stmt = $pdo->prepare('
 $stmt->execute([$idAnnonce]);
 $annonce = $stmt->fetch();
 
+// Si l'annonce n'existe pas ou n'est pas disponible, stopper l'exécution
 if (!$annonce) {
     die("Annonce introuvable ou indisponible.");
 }
 
+// Détermine l'image principale : utilise Unsplash si disponible sinon image par défaut
 $imgPrincipal = $annonce['image_unsplash']
     ? 'https://images.unsplash.com/photo-' . $annonce['image_unsplash'] . '?w=1200&q=80'
     : 'https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=1200&q=80';
 
+// Formatage rapide de quelques labels pour l'affichage
 $meuble  = $annonce['meuble'] ? 'Meublé' : 'Non meublé';
 $charges = $annonce['charges_incluses'] ? 'Charges comprises' : 'Hors charges';
 $userConnecte = !empty($_SESSION['user_id']);
@@ -52,7 +60,9 @@ $userConnecte = !empty($_SESSION['user_id']);
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <!-- Titre dynamique selon le titre de l'annonce -->
   <title><?= htmlspecialchars($annonce['titre']) ?> — SmartHome</title>
+  <!-- Google Fonts et styles globaux -->
   <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet"/>
   <link rel="stylesheet" href="style.css">
   
@@ -65,6 +75,7 @@ $userConnecte = !empty($_SESSION['user_id']);
     .nav-logout:hover { background: #fcd7d7; }
     .user-welcome { font-weight: 600; color: #0d1f1c; }
 
+    /* Conteneur principal de l'annonce (grille 2 colonnes) */
     .annonce-container {
       max-width: 1200px;
       margin: 120px auto 60px;
@@ -76,6 +87,8 @@ $userConnecte = !empty($_SESSION['user_id']);
     @media (max-width: 968px) {
       .annonce-container { grid-template-columns: 1fr; margin-top: 90px; }
     }
+
+    /* Image principale de l'annonce */
     .annonce-main-img {
       width: 100%;
       height: 450px;
@@ -90,36 +103,42 @@ $userConnecte = !empty($_SESSION['user_id']);
     .badge-green { background: #00b894; color: #fff; }
     .badge-white { background: #fff; color: #00b894; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
     
+    /* En-tête de l'annonce : titre et localisation */
     .annonce-header h1 { font-family: 'Syne', sans-serif; font-size: 2.5rem; color: #0d1f1c; margin-bottom: 0.5rem; }
     .annonce-location { font-size: 1.1rem; color: #637470; margin-bottom: 1.5rem; }
+
+    /* Grille de métadonnées (surface, pièces, type, etc.) */
     .annonce-meta-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 20px; margin-bottom: 2rem; padding: 1.5rem; background: #f4f7f6; border-radius: 16px; }
     .meta-item { display: flex; flex-direction: column; gap: 5px; }
     .meta-label { font-size: 0.85rem; color: #8a9e99; text-transform: uppercase; letter-spacing: 0.5px; }
     .meta-value { font-size: 1.1rem; font-weight: 600; color: #0d1f1c; }
-    
+
+    /* Sections descriptives et équipements */
     .annonce-section { margin-bottom: 2.5rem; border-bottom: 1px solid #e2e8f0; padding-bottom: 2rem; }
     .annonce-section h2 { font-family: 'Syne', sans-serif; font-size: 1.6rem; color: #0d1f1c; margin-bottom: 1rem; }
     .annonce-section p { color: #4a5568; line-height: 1.7; font-size: 1.05rem; }
-    
+
     .equipements-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 15px; }
     .equipement-item { display: flex; align-items: center; gap: 10px; color: #4a5568; }
     .equipement-item.checked { color: #0d1f1c; font-weight: 500; }
     .equipement-item.unchecked { color: #a0aec0; text-decoration: line-through; }
 
+    /* Carte latérale (prix, propriétaire, contact) */
     .sidebar-card { background: #fff; border: 1px solid #e2e8f0; border-radius: 24px; padding: 2rem; position: sticky; top: 110px; box-shadow: 0 10px 30px rgba(13,31,28,0.04); height: fit-content; }
     .sidebar-price { margin-bottom: 1.5rem; }
     .sidebar-price strong { font-size: 2.2rem; color: #00b894; display: block; }
     .sidebar-price span { color: #8a9e99; font-size: 1rem; font-weight: normal; }
-    
+
     .sidebar-owner { display: flex; align-items: center; gap: 15px; padding: 1rem 0; border-top: 1px solid #f0f4f3; border-bottom: 1px solid #f0f4f3; margin-bottom: 1.5rem; }
     .owner-avatar { width: 45px; height: 45px; background: #00b894; color: #fff; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 1.2rem; }
-    
+
     .btn-contact { display: block; width: 100%; text-align: center; background: #00b894; color: #fff; padding: 1rem; border-radius: 12px; font-weight: 600; text-decoration: none; transition: background 0.3s ease; box-shadow: 0 4px 12px rgba(0, 184, 148, 0.2); }
     .btn-contact:hover { background: #00a383; }
   </style>
 </head>
 <body>
  
+<!-- Barre de navigation principale -->
 <nav>
   <a href="index.php" class="nav-logo">🏠 Smart<span>Home</span></a>
   <ul class="nav-links">
@@ -128,6 +147,7 @@ $userConnecte = !empty($_SESSION['user_id']);
     <li><a href="index.php#footer-contact">Contacts</a></li>
     
     <?php if ($userConnecte): ?>
+      <!-- Affiche le prénom de l'utilisateur s'il est connecté -->
       <li><span class="user-welcome">Bonjour <?= htmlspecialchars($_SESSION['prenom'] ?? '') ?></span></li>
       <li><a href="logout.php" class="nav-logout">Se déconnecter</a></li>
     <?php else: ?>
@@ -136,8 +156,10 @@ $userConnecte = !empty($_SESSION['user_id']);
   </ul>
 </nav>
 
+<!-- Contenu principal: détails de l'annonce et sidebar -->
 <main class="annonce-container">
   <div>
+    <!-- Image principale avec badges superposés -->
     <div class="annonce-main-img" style="background-image: url('<?= htmlspecialchars($imgPrincipal) ?>');">
       <div class="annonce-badges">
         <?php if (!empty($annonce['badge'])): ?>
@@ -149,11 +171,13 @@ $userConnecte = !empty($_SESSION['user_id']);
       </div>
     </div>
 
+    <!-- Titre et localisation -->
     <div class="annonce-header">
       <h1><?= htmlspecialchars($annonce['titre']) ?></h1>
       <p class="annonce-location">📍 <?= htmlspecialchars($annonce['quartier'] ?? '') ?> — <?= htmlspecialchars($annonce['ville_nom'] ?? '') ?> (<?= htmlspecialchars($annonce['code_postal'] ?? '') ?>)</p>
     </div>
 
+    <!-- Métadonnées (surface, type, mobilier, pièces) -->
     <div class="annonce-meta-grid">
       <div class="meta-item">
         <span class="meta-label">Surface</span>
@@ -173,11 +197,13 @@ $userConnecte = !empty($_SESSION['user_id']);
       </div>
     </div>
 
+    <!-- Description détaillée -->
     <div class="annonce-section">
       <h2>Description du bien</h2>
       <p><?= nl2br(htmlspecialchars($annonce['description'])) ?></p>
     </div>
 
+    <!-- Liste des équipements avec indication présence/absence -->
     <div class="annonce-section">
       <h2>Équipements & Caractéristiques</h2>
       <div class="equipements-list">
@@ -194,6 +220,7 @@ $userConnecte = !empty($_SESSION['user_id']);
         ];
 
         foreach ($equipements as $cle => $libelle):
+          // Vérifie si l'équipement est présent dans l'annonce
           $present = !empty($annonce[$cle]);
         ?>
           <div class="equipement-item <?= $present ? 'checked' : 'unchecked' ?>">
@@ -204,6 +231,7 @@ $userConnecte = !empty($_SESSION['user_id']);
     </div>
   </div>
 
+  <!-- Sidebar contenant le prix, propriétaire et bouton de contact -->
   <aside>
     <div class="sidebar-card">
       <div class="sidebar-price">
@@ -221,6 +249,7 @@ $userConnecte = !empty($_SESSION['user_id']);
         </div>
       </div>
 
+      <!-- Bouton de contact : change selon l'état de connexion -->
       <?php if ($userConnecte): ?>
         <a href="contact_proprietaire.php?annonce_id=<?= $annonce['id'] ?>" class="btn-contact">✉️ Contacter le propriétaire</a>
       <?php else: ?>
@@ -230,6 +259,7 @@ $userConnecte = !empty($_SESSION['user_id']);
   </aside>
 </main>
 
+<!-- Footer et infos de contact -->
 <footer id="footer-contact">
   <div class="footer-brand">
     <a href="#" class="nav-logo">🏠 SmartHome<span> </span></a>
@@ -253,6 +283,5 @@ $userConnecte = !empty($_SESSION['user_id']);
   © 2026 SmartHome — Tous droits réservés
 </div>
 
-<script src="script.js"></script>
 </body>
 </html>

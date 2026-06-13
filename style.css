@@ -1,101 +1,107 @@
+/* Réinitialisation: box-sizing et marges/paddings par défaut */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
  
+/* Variables CSS globales */
 :root {
-  --green-deep:   #0a2e2a;
-  --green-mid:    #0d6e5e;
-  --green-main:   #00b894;
-  --green-light:  #74d7c4;
-  --green-pale:   #f0faf8;
-  --white:        #ffffff;
-  --gray-light:   #f4f6f5;
-  --gray-mid:     #d1dbd9;
-  --gray-text:    #637470;
-  --dark-text:    #0d1f1c;
-  --font-display: 'Syne', sans-serif;
-  --font-body:    'DM Sans', sans-serif;
-  --radius:       14px;
-  --radius-lg:    24px;
+  /* Couleurs profondes */
+  --green-deep:   #0a2e2a; /* couleur verte très foncée */
+  --green-mid:    #0d6e5e; /* vert moyen pour accents */
+  --green-main:   #00b894; /* vert principal (CTA) */
+  --green-light:  #74d7c4; /* vert clair */
+  --green-pale:   #f0faf8; /* fond vert très pâle */
+  --white:        #ffffff; /* blanc */
+  --gray-light:   #f4f6f5; /* gris clair pour séparateurs */
+  --gray-mid:     #d1dbd9; /* gris moyen */
+  --gray-text:    #637470; /* gris pour texte secondaire */
+  --dark-text:    #0d1f1c; /* texte principal sombre */
+  --font-display: 'Syne', sans-serif; /* police titres */
+  --font-body:    'DM Sans', sans-serif; /* police corps */
+  --radius:       14px; /* rayon arrondi standard */
+  --radius-lg:    24px; /* grand rayon arrondi */
 }
  
+/* Défilement fluide pour ancres */
 html { scroll-behavior: smooth; }
  
+/* Styles de base du body */
 body {
-  font-family: var(--font-body);
-  background: var(--white);
-  color: var(--dark-text);
-  overflow-x: hidden;
+  font-family: var(--font-body); /* police principale */
+  background: var(--white); /* fond blanc */
+  color: var(--dark-text); /* couleur texte par défaut */
+  overflow-x: hidden; /* éviter scroll horizontal */
 }
  
 /* ── NAVBAR ── */
+/* Barre de navigation fixe en haut */
 nav {
-  position: fixed; top: 0; left: 0; right: 0; z-index: 100;
-  display: flex; align-items: center; justify-content: space-between;
-  padding: 1.1rem 6%;
-  background: rgba(255,255,255,0.85);
-  backdrop-filter: blur(14px);
-  border-bottom: 1px solid var(--gray-mid);
+  position: fixed; top: 0; left: 0; right: 0; z-index: 100; /* fixe et au-dessus */
+  display: flex; align-items: center; justify-content: space-between; /* alignment */
+  padding: 1.1rem 6%; /* espacement interne */
+  background: rgba(255,255,255,0.85); /* léger fond translucide */
+  backdrop-filter: blur(14px); /* flou derrière la nav */
+  border-bottom: 1px solid var(--gray-mid); /* séparation inférieure */
 }
 .nav-logo {
-  font-family: var(--font-display);
-  font-weight: 800;
-  font-size: 1.35rem;
-  color: var(--green-mid);
-  text-decoration: none;
-  display: flex; align-items: center; gap: 0.5rem;
+  font-family: var(--font-display); /* police des titres */
+  font-weight: 800; /* graisse forte */
+  font-size: 1.35rem; /* taille logo */
+  color: var(--green-mid); /* couleur logo */
+  text-decoration: none; /* pas de soulignement */
+  display: flex; align-items: center; gap: 0.5rem; /* alignement icône+texte */
 }
-.nav-logo span { color: var(--dark-text); }
-.nav-logo .dot { color: var(--green-main); }
-.nav-links { display: flex; align-items: center; gap: 2rem; list-style: none; }
+.nav-logo span { color: var(--dark-text); /* partie sombre du logo */ }
+.nav-logo .dot { color: var(--green-main); /* point accentué */ }
+.nav-links { display: flex; align-items: center; gap: 2rem; list-style: none; /* conteneur liens */ }
 .nav-links a {
-  font-size: 0.92rem; font-weight: 400;
-  color: var(--gray-text); text-decoration: none;
-  transition: color 0.2s;
+  font-size: 0.92rem; font-weight: 400; /* style lien */
+  color: var(--gray-text); text-decoration: none; /* visuel lien */
+  transition: color 0.2s; /* transition au survol */
 }
-.nav-links a:hover { color: var(--green-mid); }
+.nav-links a:hover { color: var(--green-mid); /* survol change la couleur */ }
  
 .nav-links a.nav-cta {
-  background: var(--green-main);
-  color: var(--white);
-  padding: 0.5rem 1.3rem;
-  border-radius: 50px;
-  font-weight: 500;
-  transition: background 0.2s, transform 0.2s;
+  background: var(--green-main); /* bouton CTA */
+  color: var(--white); /* texte blanc */
+  padding: 0.5rem 1.3rem; /* esapcement */
+  border-radius: 50px; /* arrondi pill */
+  font-weight: 500; /* semi-gras */
+  transition: background 0.2s, transform 0.2s; /* animation */
 }
 .nav-links a.nav-cta:hover {
-  background: var(--green-mid);
-  transform: scale(1.03);
+  background: var(--green-mid); /* couleur au hover */
+  transform: scale(1.03); /* léger agrandissement */
 }
  
 /* Dropdown nav */
-.nav-links li { position: relative; }
- 
+.nav-links li { position: relative; /* nécessaire pour le positionnement absolu du dropdown */ }
+
 .nav-links .dropdown {
-  display: none;
-  position: absolute;
-  top: 100%;
-  left: 0;
-  background: #fff;
-  border: 1px solid #ddd;
-  border-top: 2px solid #079848;
-  min-width: 220px;
-  z-index: 100;
-  box-shadow: 0 4px 16px rgba(6, 180, 35, 0.25);
+  display: none; /* caché par défaut */
+  position: absolute; /* position relatif au parent */
+  top: 100%; /* juste sous le lien */
+  left: 0; /* aligné à gauche */
+  background: #fff; /* fond blanc */
+  border: 1px solid #ddd; /* bord léger */
+  border-top: 2px solid #079848; /* accent supérieur */
+  min-width: 220px; /* largeur minimale */
+  z-index: 100; /* au-dessus */
+  box-shadow: 0 4px 16px rgba(6, 180, 35, 0.25); /* ombre */
 }
- 
-.nav-links li:hover .dropdown { display: block; }
- 
+
+.nav-links li:hover .dropdown { display: block; /* affiche au survol du parent */ }
+
 .nav-links .dropdown a {
-  display: block;
-  padding: 13px 20px;
-  font-size: 14px;
-  color: #222;
-  border-bottom: 1px solid #f0f0f0;
-  text-decoration: none;
+  display: block; /* lien en bloc pour remplir */
+  padding: 13px 20px; /* espacement interne */
+  font-size: 14px; /* taille du texte */
+  color: #222; /* couleur texte */
+  border-bottom: 1px solid #f0f0f0; /* séparation entre items */
+  text-decoration: none; /* pas de soulignement */
 }
- 
-.nav-links .dropdown a:hover { background: #f5f5f5; }
-.nav-links li a { border-bottom: none; }
-.chevron { font-size: 12px; opacity: 0.5; margin-left: 4px; }
+
+.nav-links .dropdown a:hover { background: #f5f5f5; /* survol item */ }
+.nav-links li a { border-bottom: none; /* enlever border bottom par défaut */ }
+.chevron { font-size: 12px; opacity: 0.5; margin-left: 4px; /* petite flèche */ }
  
 /* ── HERO ── */
 .hero {
