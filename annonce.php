@@ -24,11 +24,9 @@ if ($idAnnonce <= 0) {
     exit;
 }
 
-// Récupération des détails de l'annonce avec l'email du propriétaire
+// Récupération des détails de l'annonce
 $stmt = $pdo->prepare('
-    SELECT a.*, v.nom AS ville_nom, v.code_postal, 
-           CONCAT(u.prenom, " ", u.nom) AS proprietaire_nom,
-           u.email AS proprietaire_email
+    SELECT a.*, v.nom AS ville_nom, v.code_postal, CONCAT(u.prenom, " ", u.nom) AS proprietaire_nom 
     FROM annonces a
     LEFT JOIN villes v ON a.ville_id = v.id
     LEFT JOIN utilisateurs u ON a.proprietaire_id = u.id
@@ -37,12 +35,10 @@ $stmt = $pdo->prepare('
 $stmt->execute([$idAnnonce]);
 $annonce = $stmt->fetch();
 
-// Si l'annonce n'existe pas ou n'est plus disponible
 if (!$annonce) {
     die("Annonce introuvable ou indisponible.");
 }
 
-// Gestion des variables d'affichage
 $imgPrincipal = $annonce['image_unsplash']
     ? 'https://images.unsplash.com/photo-' . $annonce['image_unsplash'] . '?w=1200&q=80'
     : 'https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=1200&q=80';
@@ -61,6 +57,14 @@ $userConnecte = !empty($_SESSION['user_id']);
   <link rel="stylesheet" href="style.css">
   
   <style>
+    /* Styles harmonisés pour la navigation */
+    .nav-links { display: flex; align-items: center; list-style: none; gap: 20px; }
+    .nav-links a { text-decoration: none; color: #0d1f1c; font-weight: 500; }
+    .nav-cta { background: #00b894; color: #fff !important; padding: 8px 18px; border-radius: 20px; font-weight: 600 !important; }
+    .nav-logout { background: #feecec; color: #8f1b1b !important; padding: 8px 18px; border-radius: 20px; font-weight: 600 !important; transition: background 0.3s ease; }
+    .nav-logout:hover { background: #fcd7d7; }
+    .user-welcome { font-weight: 600; color: #0d1f1c; }
+
     .annonce-container {
       max-width: 1200px;
       margin: 120px auto 60px;
@@ -81,122 +85,36 @@ $userConnecte = !empty($_SESSION['user_id']);
       position: relative;
       margin-bottom: 2rem;
     }
-    .annonce-badges {
-      position: absolute;
-      top: 20px;
-      left: 20px;
-      display: flex;
-      gap: 10px;
-    }
-    .badge-item {
-      padding: 6px 14px;
-      border-radius: 20px;
-      font-size: 0.85rem;
-      font-weight: 700;
-    }
+    .annonce-badges { position: absolute; top: 20px; left: 20px; display: flex; gap: 10px; }
+    .badge-item { padding: 6px 14px; border-radius: 20px; font-size: 0.85rem; font-weight: 700; }
     .badge-green { background: #00b894; color: #fff; }
     .badge-white { background: #fff; color: #00b894; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
     
-    .annonce-header h1 {
-      font-family: 'Syne', sans-serif;
-      font-size: 2.5rem;
-      color: #0d1f1c;
-      margin-bottom: 0.5rem;
-    }
-    .annonce-location {
-      font-size: 1.1rem;
-      color: #637470;
-      margin-bottom: 1.5rem;
-    }
-    .annonce-meta-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-      gap: 20px;
-      margin-bottom: 2rem;
-      padding: 1.5rem;
-      background: #f4f7f6;
-      border-radius: 16px;
-    }
+    .annonce-header h1 { font-family: 'Syne', sans-serif; font-size: 2.5rem; color: #0d1f1c; margin-bottom: 0.5rem; }
+    .annonce-location { font-size: 1.1rem; color: #637470; margin-bottom: 1.5rem; }
+    .annonce-meta-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 20px; margin-bottom: 2rem; padding: 1.5rem; background: #f4f7f6; border-radius: 16px; }
     .meta-item { display: flex; flex-direction: column; gap: 5px; }
     .meta-label { font-size: 0.85rem; color: #8a9e99; text-transform: uppercase; letter-spacing: 0.5px; }
     .meta-value { font-size: 1.1rem; font-weight: 600; color: #0d1f1c; }
     
-    .annonce-section {
-      margin-bottom: 2.5rem;
-      border-bottom: 1px solid #e2e8f0;
-      padding-bottom: 2rem;
-    }
-    .annonce-section h2 {
-      font-family: 'Syne', sans-serif;
-      font-size: 1.6rem;
-      color: #0d1f1c;
-      margin-bottom: 1rem;
-    }
-    .annonce-section p {
-      color: #4a5568;
-      line-height: 1.7;
-      font-size: 1.05rem;
-    }
+    .annonce-section { margin-bottom: 2.5rem; border-bottom: 1px solid #e2e8f0; padding-bottom: 2rem; }
+    .annonce-section h2 { font-family: 'Syne', sans-serif; font-size: 1.6rem; color: #0d1f1c; margin-bottom: 1rem; }
+    .annonce-section p { color: #4a5568; line-height: 1.7; font-size: 1.05rem; }
     
-    .equipements-list {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-      gap: 15px;
-    }
+    .equipements-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 15px; }
     .equipement-item { display: flex; align-items: center; gap: 10px; color: #4a5568; }
     .equipement-item.checked { color: #0d1f1c; font-weight: 500; }
     .equipement-item.unchecked { color: #a0aec0; text-decoration: line-through; }
 
-    /* Panneau d'action / Prix latéral */
-    .sidebar-card {
-      background: #fff;
-      border: 1px solid #e2e8f0;
-      border-radius: 24px;
-      padding: 2rem;
-      position: sticky;
-      top: 110px;
-      box-shadow: 0 10px 30px rgba(13,31,28,0.04);
-      height: fit-content;
-    }
+    .sidebar-card { background: #fff; border: 1px solid #e2e8f0; border-radius: 24px; padding: 2rem; position: sticky; top: 110px; box-shadow: 0 10px 30px rgba(13,31,28,0.04); height: fit-content; }
     .sidebar-price { margin-bottom: 1.5rem; }
     .sidebar-price strong { font-size: 2.2rem; color: #00b894; display: block; }
     .sidebar-price span { color: #8a9e99; font-size: 1rem; font-weight: normal; }
     
-    .sidebar-owner {
-      display: flex;
-      align-items: center;
-      gap: 15px;
-      padding: 1rem 0;
-      border-top: 1px solid #f0f4f3;
-      border-bottom: 1px solid #f0f4f3;
-      margin-bottom: 1.5rem;
-    }
-    .owner-avatar {
-      width: 45px;
-      height: 45px;
-      background: #00b894;
-      color: #fff;
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-weight: bold;
-      font-size: 1.2rem;
-    }
+    .sidebar-owner { display: flex; align-items: center; gap: 15px; padding: 1rem 0; border-top: 1px solid #f0f4f3; border-bottom: 1px solid #f0f4f3; margin-bottom: 1.5rem; }
+    .owner-avatar { width: 45px; height: 45px; background: #00b894; color: #fff; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 1.2rem; }
     
-    .btn-contact {
-      display: block;
-      width: 100%;
-      text-align: center;
-      background: #00b894;
-      color: #fff;
-      padding: 1rem;
-      border-radius: 12px;
-      font-weight: 600;
-      text-decoration: none;
-      transition: background 0.3s ease;
-      box-shadow: 0 4px 12px rgba(0, 184, 148, 0.2);
-    }
+    .btn-contact { display: block; width: 100%; text-align: center; background: #00b894; color: #fff; padding: 1rem; border-radius: 12px; font-weight: 600; text-decoration: none; transition: background 0.3s ease; box-shadow: 0 4px 12px rgba(0, 184, 148, 0.2); }
     .btn-contact:hover { background: #00a383; }
   </style>
 </head>
@@ -208,12 +126,17 @@ $userConnecte = !empty($_SESSION['user_id']);
     <li><a href="index.php#how">Comment ça marche</a></li>
     <li><a href="index.php#why">Pourquoi nous ?</a></li>
     <li><a href="index.php#footer-contact">Contacts</a></li>
-    <li><a href="index.php#cta" class="nav-cta">Mon Compte</a></li>
+    
+    <?php if ($userConnecte): ?>
+      <li><span class="user-welcome">Bonjour <?= htmlspecialchars($_SESSION['prenom'] ?? '') ?></span></li>
+      <li><a href="logout.php" class="nav-logout">Se déconnecter</a></li>
+    <?php else: ?>
+      <li><a href="connexion.php" class="nav-cta">Mon Compte</a></li>
+    <?php endif; ?>
   </ul>
 </nav>
 
 <main class="annonce-container">
-  
   <div>
     <div class="annonce-main-img" style="background-image: url('<?= htmlspecialchars($imgPrincipal) ?>');">
       <div class="annonce-badges">
@@ -299,22 +222,12 @@ $userConnecte = !empty($_SESSION['user_id']);
       </div>
 
       <?php if ($userConnecte): ?>
-        <div style="background: #f4f7f6; padding: 1rem; border-radius: 12px; margin-bottom: 1.5rem; border: 1px dashed #00b894;">
-          <p style="margin: 0; font-size: 0.95rem; color: #4a5568;">
-            <strong>📧 Email :</strong> 
-            <a href="mailto:<?= htmlspecialchars($annonce['proprietaire_email']) ?>" style="color: #00b894; text-decoration: none; font-weight: 600;">
-              <?= htmlspecialchars($annonce['proprietaire_email']) ?>
-            </a>
-          </p>
-        </div>
-
-        <a href="mailto:<?= htmlspecialchars($annonce['proprietaire_email']) ?>?subject=Demande d'information - <?= urlencode($annonce['titre']) ?>" class="btn-contact">✉️ Envoyer un e-mail</a>
+        <a href="contact_proprietaire.php?annonce_id=<?= $annonce['id'] ?>" class="btn-contact">✉️ Contacter le propriétaire</a>
       <?php else: ?>
-        <a href="connexion.php" class="btn-contact">Se connecter pour voir le contact</a>
+        <a href="connexion.php" class="btn-contact">Se connecter pour réserver</a>
       <?php endif; ?>
     </div>
   </aside>
-
 </main>
 
 <footer id="footer-contact">
