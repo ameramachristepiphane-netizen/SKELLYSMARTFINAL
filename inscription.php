@@ -5,7 +5,7 @@ session_start();
 $host   = '127.0.0.1';
 $dbname = 'smarthome';
 $user   = 'root';   // ← adapte selon ton environnement
-$pass   = 'root';       // ← adapte selon ton environnement
+$pass   = 'root';   // ← adapte selon ton environnement
 
 try {
     $pdo = new PDO("mysql:host=$host;dbname=$dbname;charset=utf8mb4", $user, $pass, [
@@ -33,40 +33,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } elseif (strlen($mdp) < 8) {
         $error = 'Le mot de passe doit contenir au moins 8 caractères.';
     } else {
-        // Mapping profil → ENUM situation de la BDD
-        $situationMap = [
-            'Étudiant'    => 'etudiant',
-            'Travailleur' => 'travailleur',
-            'Étranger'    => 'etranger',
-        ];
-        $situation = $situationMap[$profil] ?? 'autre';
-
-        // Vérifier doublon email
-        $check = $pdo->prepare('SELECT id FROM utilisateurs WHERE email = ? LIMIT 1');
-        $check->execute([$email]);
-
-        if ($check->fetch()) {
+        // Vérification si l'email existe déjà
+        $stmt = $pdo->prepare('SELECT id FROM utilisateurs WHERE email = ? LIMIT 1');
+        $stmt->execute([$email]);
+        if ($stmt->fetch()) {
             $error = 'Cette adresse email est déjà utilisée.';
         } else {
-            $hash = password_hash($mdp, PASSWORD_BCRYPT);
-            $stmt = $pdo->prepare(
-                'INSERT INTO utilisateurs (nom, prenom, email, mot_de_passe, role, situation, actif)
-                 VALUES (?, ?, ?, ?, "locataire", ?, 1)'
-            );
-            $stmt->execute([$nom, $prenom, $email, $hash, $situation]);
+            // Hachage du mot de passe
+            $mdpHash = password_hash($mdp, PASSWORD_BCRYPT);
+            
+            // Détermination automatique du rôle par défaut (ex: locataire)
+            $role = 'locataire'; 
 
-            // Connexion automatique après inscription
-            $newUser = $pdo->prepare('SELECT id, prenom, nom, role FROM utilisateurs WHERE email = ? LIMIT 1');
-            $newUser->execute([$email]);
-            $u = $newUser->fetch();
-
-            $_SESSION['user_id'] = $u['id'];
-            $_SESSION['prenom']  = $u['prenom'];
-            $_SESSION['nom']     = $u['nom'];
-            $_SESSION['role']    = $u['role'];
-
-            header('Location: index.php');
-            exit;
+            $stmt = $pdo->prepare('INSERT INTO utilisateurs (prenom, nom, email, mot_de_passe, role, profil, actif, cree_le) VALUES (?, ?, ?, ?, ?, ?, 1, NOW())');
+            
+            if ($stmt->execute([$prenom, $nom, $email, $mdpHash, $role, $profil])) {
+                $message = 'Votre compte a été créé avec succès ! Vous pouvez maintenant vous connecter.';
+            } else {
+                $error = 'Une erreur est survenue lors de l’inscription.';
+            }
         }
     }
 }
@@ -77,43 +62,198 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Inscription — SmartHome</title>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=DM+Sans:wght@300;400;500;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
+  <style>
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background-color: #f4f7f6;
+      color: #0d1f1c;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      margin: 0;
+      padding: 40px 20px;
+    }
+    .auth-container {
+      background: #ffffff;
+      border: 1px solid #e2e8f0;
+      border-radius: 24px;
+      padding: 2.5rem;
+      max-width: 500px;
+      width: 100%;
+      box-shadow: 0 10px 30px rgba(13,31,28,0.04);
+    }
+    .auth-logo {
+      font-family: 'Syne', sans-serif;
+      font-size: 1.8rem;
+      font-weight: 700;
+      color: #0d1f1c;
+      text-decoration: none;
+      display: block;
+      text-align: center;
+      margin-bottom: 2rem;
+    }
+    .auth-logo span {
+      color: #00b894;
+    }
+    h1 {
+      font-family: 'Syne', sans-serif;
+      font-size: 1.8rem;
+      font-weight: 700;
+      margin-bottom: 0.5rem;
+      color: #0d1f1c;
+    }
+    .subtitle {
+      color: #637470;
+      font-size: 0.95rem;
+      margin-bottom: 2rem;
+    }
+    .form-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 15px;
+    }
+    @media (max-width: 480px) {
+      .form-grid {
+        grid-template-columns: 1fr;
+        gap: 0;
+      }
+    }
+    .form-group {
+      margin-bottom: 1.25rem;
+    }
+    label {
+      display: block;
+      font-weight: 600;
+      margin-bottom: 0.4rem;
+      color: #42504d;
+      font-size: 0.9rem;
+    }
+    input[type="text"], input[type="email"], input[type="password"], select {
+      width: 100%;
+      padding: 0.85rem 1rem;
+      border: 1px solid #d1dbd9;
+      border-radius: 12px;
+      font-size: 1rem;
+      font-family: inherit;
+      color: #0d1f1c;
+      box-sizing: border-box;
+      transition: border-color 0.3s ease;
+      background-color: #fff;
+    }
+    input:focus, select:focus {
+      outline: none;
+      border-color: #00b894;
+    }
+    .alert {
+      padding: 0.95rem 1rem;
+      border-radius: 14px;
+      margin-bottom: 1.5rem;
+      font-size: 0.95rem;
+      line-height: 1.4;
+    }
+    .alert-error {
+      background: #feecec;
+      color: #8f1b1b;
+      border: 1px solid #f1c1c1;
+    }
+    .alert-success {
+      background: #eaf8f4;
+      color: #0b5f4f;
+      border: 1px solid #b9e7d6;
+    }
+    .btn-submit {
+      width: 100%;
+      background: #00b894;
+      color: #ffffff;
+      border: none;
+      padding: 1rem;
+      border-radius: 12px;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.3s ease;
+      margin-top: 1rem;
+    }
+    .btn-submit:hover {
+      background: #00a383;
+    }
+    .auth-footer {
+      text-align: center;
+      margin-top: 2rem;
+      font-size: 0.95rem;
+      color: #637470;
+    }
+    .auth-footer a {
+      color: #00b894;
+      text-decoration: none;
+      font-weight: 600;
+    }
+    .auth-footer a:hover {
+      text-decoration: underline;
+    }
+  </style>
 </head>
 <body>
-  <main style="min-height:100vh;display:flex;align-items:center;justify-content:center;padding:2rem;">
-    <form action="inscription.php" method="POST" style="width:min(520px,100%);background:#fff;border:1px solid #e8eceb;border-radius:24px;padding:2rem;box-shadow:0 18px 55px rgba(0,0,0,0.06);">
-      <h2 style="margin-bottom:1.4rem;color:#0d1f1c;">Inscription</h2>
 
-      <?php if ($message): ?>
-        <p style="margin-bottom:1rem;padding:0.95rem 1rem;background:#eaf8f4;color:#0b5f4f;border:1px solid #b9e7d6;border-radius:14px;"><?= htmlspecialchars($message, ENT_QUOTES, 'UTF-8') ?></p>
-      <?php endif; ?>
+  <div class="auth-container">
+    <a href="index.php" class="auth-logo">🏠 Smart<span>Home</span></a>
+    
+    <h1>Créer un compte</h1>
+    <p class="subtitle">Rejoignez SmartHome pour trouver ou proposer vos logements facilement.</p>
 
-      <?php if ($error): ?>
-        <p style="margin-bottom:1rem;padding:0.95rem 1rem;background:#feecec;color:#8f1b1b;border:1px solid #f1c1c1;border-radius:14px;"><?= htmlspecialchars($error, ENT_QUOTES, 'UTF-8') ?></p>
-      <?php endif; ?>
+    <?php if ($message): ?>
+      <div class="alert alert-success"><?= htmlspecialchars($message, ENT_QUOTES, 'UTF-8') ?></div>
+    <?php endif; ?>
 
-      <label style="display:block;font-weight:600;margin-bottom:0.4rem;color:#42504d;">Prénom :</label>
-      <input type="text" name="prenom" required style="width:100%;padding:0.85rem 1rem;border:1px solid #d1dbd9;border-radius:12px;margin-bottom:1rem;font-size:1rem;" />
+    <?php if ($error): ?>
+      <div class="alert alert-error"><?= htmlspecialchars($error, ENT_QUOTES, 'UTF-8') ?></div>
+    <?php endif; ?>
 
-      <label style="display:block;font-weight:600;margin-bottom:0.4rem;color:#42504d;">Nom :</label>
-      <input type="text" name="nom" required style="width:100%;padding:0.85rem 1rem;border:1px solid #d1dbd9;border-radius:12px;margin-bottom:1rem;font-size:1rem;" />
+    <form action="inscription.php" method="POST">
+      
+      <div class="form-grid">
+        <div class="form-group">
+          <label for="prenom">Prénom :</label>
+          <input type="text" id="prenom" name="prenom" required placeholder="John" value="<?= isset($_POST['prenom']) ? htmlspecialchars($_POST['prenom']) : '' ?>">
+        </div>
 
-      <label style="display:block;font-weight:600;margin-bottom:0.4rem;color:#42504d;">Email :</label>
-      <input type="email" name="email" required style="width:100%;padding:0.85rem 1rem;border:1px solid #d1dbd9;border-radius:12px;margin-bottom:1rem;font-size:1rem;" />
+        <div class="form-group">
+          <label for="nom">Nom :</label>
+          <input type="text" id="nom" name="nom" required placeholder="Doe" value="<?= isset($_POST['nom']) ? htmlspecialchars($_POST['nom']) : '' ?>">
+        </div>
+      </div>
 
-      <label style="display:block;font-weight:600;margin-bottom:0.4rem;color:#42504d;">Mot de passe :</label>
-      <input type="password" name="password" required style="width:100%;padding:0.85rem 1rem;border:1px solid #d1dbd9;border-radius:12px;margin-bottom:1rem;font-size:1rem;" />
+      <div class="form-group">
+        <label for="email">Adresse Email :</label>
+        <input type="email" id="email" name="email" required placeholder="exemple@smarthome.fr" value="<?= isset($_POST['email']) ? htmlspecialchars($_POST['email']) : '' ?>">
+      </div>
 
-      <label style="display:block;font-weight:600;margin-bottom:0.4rem;color:#42504d;">Profil :</label>
-      <select name="profil" required style="width:100%;padding:0.85rem 1rem;border:1px solid #d1dbd9;border-radius:12px;margin-bottom:1.5rem;font-size:1rem;">
-        <option value="Étudiant">Étudiant</option>
-        <option value="Travailleur">Travailleur</option>
-        <option value="Étranger">Étranger</option>
-      </select>
+      <div class="form-group">
+        <label for="password">Mot de passe :</label>
+        <input type="password" id="password" name="password" required placeholder="8 caractères minimum">
+      </div>
 
-      <button type="submit" style="width:100%;padding:0.95rem 1rem;background:#00b894;color:#fff;border:none;border-radius:14px;font-size:1rem;font-weight:700;cursor:pointer;">Créer un compte</button>
-      <p style="margin-top:1rem;font-size:0.95rem;color:#637470;">Déjà inscrit ? <a href="connexion.php" style="color:#0d6e5e;text-decoration:none;font-weight:600;">Se connecter</a></p>
+      <div class="form-group">
+        <label for="profil">Profil utilisateur :</label>
+        <select id="profil" name="profil" required>
+          <option value="" disabled selected>Choisissez votre situation</option>
+          <option value="Étudiant" <?= (isset($_POST['profil']) && $_POST['profil'] === 'Étudiant') ? 'selected' : '' ?>>Étudiant</option>
+          <option value="Travailleur" <?= (isset($_POST['profil']) && $_POST['profil'] === 'Travailleur') ? 'selected' : '' ?>>Travailleur</option>
+          <option value="Étranger" <?= (isset($_POST['profil']) && $_POST['profil'] === 'Étranger') ? 'selected' : '' ?>>Étranger / Expatrié</option>
+          <option value="Autre" <?= (isset($_POST['profil']) && $_POST['profil'] === 'Autre') ? 'selected' : '' ?>>Autre</option>
+        </select>
+      </div>
+
+      <button type="submit" class="btn-submit">S'inscrire</button>
     </form>
-  </main>
+
+    <div class="auth-footer">
+      Déjà membre ? <a href="connexion.php">Se connecter</a>
+    </div>
+  </div>
+
 </body>
 </html>

@@ -5,7 +5,7 @@ session_start();
 $host    = '127.0.0.1';
 $dbname  = 'smarthome';
 $user    = 'root';   // ← adapte selon ton environnement
-$pass    = 'root';       // ← adapte selon ton environnement
+$pass    = 'root';   // ← adapte selon ton environnement
 
 try {
     $pdo = new PDO("mysql:host=$host;dbname=$dbname;charset=utf8mb4", $user, $pass, [
@@ -42,12 +42,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if (!$user || !password_verify($mdp, $user['mot_de_passe'])) {
             $error = 'Email ou mot de passe incorrect.';
         } elseif (!$user['actif']) {
-            $error = 'Ce compte est désactivé. Contactez le support.';
+            $error = 'Ce compte est désactivé.';
         } else {
-            $_SESSION['user_id'] = $user['id'];
-            $_SESSION['prenom']  = $user['prenom'];
-            $_SESSION['nom']     = $user['nom'];
-            $_SESSION['role']    = $user['role'];
+            // ── CONNEXION RÉUSSIE ──
+            $_SESSION['user_id']     = $user['id'];
+            $_SESSION['user_role']   = $user['role'];
+            $_SESSION['user_prenom'] = $user['prenom']; // <-- LA CORRECTION EST ICI
 
             header('Location: index.php');
             exit;
@@ -61,34 +61,161 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Connexion — SmartHome</title>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=DM+Sans:wght@300;400;500;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
+  <style>
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background-color: #f4f7f6;
+      color: #0d1f1c;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      margin: 0;
+      padding: 20px;
+    }
+    .auth-container {
+      background: #ffffff;
+      border: 1px solid #e2e8f0;
+      border-radius: 24px;
+      padding: 2.5rem;
+      max-width: 450px;
+      width: 100%;
+      box-shadow: 0 10px 30px rgba(13,31,28,0.04);
+    }
+    .auth-logo {
+      font-family: 'Syne', sans-serif;
+      font-size: 1.8rem;
+      font-weight: 700;
+      color: #0d1f1c;
+      text-decoration: none;
+      display: block;
+      text-align: center;
+      margin-bottom: 2rem;
+    }
+    .auth-logo span {
+      color: #00b894;
+    }
+    h1 {
+      font-family: 'Syne', sans-serif;
+      font-size: 1.8rem;
+      font-weight: 700;
+      margin-bottom: 0.5rem;
+      color: #0d1f1c;
+    }
+    .subtitle {
+      color: #637470;
+      font-size: 0.95rem;
+      margin-bottom: 2rem;
+    }
+    .form-group {
+      margin-bottom: 1.25rem;
+    }
+    label {
+      display: block;
+      font-weight: 600;
+      margin-bottom: 0.4rem;
+      color: #42504d;
+      font-size: 0.9rem;
+    }
+    input[type="email"], input[type="password"] {
+      width: 100%;
+      padding: 0.85rem 1rem;
+      border: 1px solid #d1dbd9;
+      border-radius: 12px;
+      font-size: 1rem;
+      font-family: inherit;
+      color: #0d1f1c;
+      box-sizing: border-box;
+      transition: border-color 0.3s ease;
+    }
+    input:focus {
+      outline: none;
+      border-color: #00b894;
+    }
+    .alert {
+      padding: 0.95rem 1rem;
+      border-radius: 14px;
+      margin-bottom: 1.5rem;
+      font-size: 0.95rem;
+    }
+    .alert-error {
+      background: #feecec;
+      color: #8f1b1b;
+      border: 1px solid #f1c1c1;
+    }
+    .alert-success {
+      background: #eaf8f4;
+      color: #0b5f4f;
+      border: 1px solid #b9e7d6;
+    }
+    .btn-submit {
+      width: 100%;
+      background: #00b894;
+      color: #ffffff;
+      border: none;
+      padding: 1rem;
+      border-radius: 12px;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.3s ease;
+      margin-top: 1rem;
+    }
+    .btn-submit:hover {
+      background: #00a383;
+    }
+    .auth-footer {
+      text-align: center;
+      margin-top: 2rem;
+      font-size: 0.95rem;
+      color: #637470;
+    }
+    .auth-footer a {
+      color: #00b894;
+      text-decoration: none;
+      font-weight: 600;
+    }
+    .auth-footer a:hover {
+      text-decoration: underline;
+    }
+  </style>
 </head>
 <body>
-  <main style="min-height:100vh;display:flex;align-items:center;justify-content:center;padding:2rem;">
-    <form action="connexion.php" method="POST" style="width:min(420px,100%);background:#fff;border:1px solid #e8eceb;border-radius:24px;padding:2rem;box-shadow:0 18px 55px rgba(0,0,0,0.06);">
-      <h2 style="margin-bottom:1.4rem;color:#0d1f1c;">Connexion</h2>
 
-      <?php if ($statusText): ?>
-        <p style="margin-bottom:1rem;padding:0.95rem 1rem;background:#f0faf8;color:#0c5f51;border:1px solid #c7ede4;border-radius:14px;"><?= $statusText ?></p>
-      <?php endif; ?>
+  <div class="auth-container">
+    <a href="index.php" class="auth-logo">🏠 Smart<span>Home</span></a>
+    
+    <h1>Connexion</h1>
+    <p class="subtitle">Accédez à votre espace pour gérer vos recherches ou vos biens.</p>
 
-      <?php if ($message): ?>
-        <p style="margin-bottom:1rem;padding:0.95rem 1rem;background:#eaf8f4;color:#0b5f4f;border:1px solid #b9e7d6;border-radius:14px;"><?= htmlspecialchars($message, ENT_QUOTES, 'UTF-8') ?></p>
-      <?php endif; ?>
+    <?php if ($message): ?>
+      <div class="alert alert-success"><?= htmlspecialchars($message, ENT_QUOTES, 'UTF-8') ?></div>
+    <?php endif; ?>
 
-      <?php if ($error): ?>
-        <p style="margin-bottom:1rem;padding:0.95rem 1rem;background:#feecec;color:#8f1b1b;border:1px solid #f1c1c1;border-radius:14px;"><?= htmlspecialchars($error, ENT_QUOTES, 'UTF-8') ?></p>
-      <?php endif; ?>
+    <?php if ($error): ?>
+      <div class="alert alert-error"><?= htmlspecialchars($error, ENT_QUOTES, 'UTF-8') ?></div>
+    <?php endif; ?>
 
-      <label style="display:block;font-weight:600;margin-bottom:0.4rem;color:#42504d;">Email :</label>
-      <input type="email" name="email" required style="width:100%;padding:0.85rem 1rem;border:1px solid #d1dbd9;border-radius:12px;margin-bottom:1rem;font-size:1rem;" />
+    <form action="connexion.php" method="POST">
+      <div class="form-group">
+        <label for="email">Adresse Email :</label>
+        <input type="email" id="email" name="email" required placeholder="exemple@smarthome.fr">
+      </div>
 
-      <label style="display:block;font-weight:600;margin-bottom:0.4rem;color:#42504d;">Mot de passe :</label>
-      <input type="password" name="password" required style="width:100%;padding:0.85rem 1rem;border:1px solid #d1dbd9;border-radius:12px;margin-bottom:1.5rem;font-size:1rem;" />
+      <div class="form-group">
+        <label for="password">Mot de passe :</label>
+        <input type="password" id="password" name="password" required placeholder="••••••••">
+      </div>
 
-      <button type="submit" style="width:100%;padding:0.95rem 1rem;background:#00b894;color:#fff;border:none;border-radius:14px;font-size:1rem;font-weight:700;cursor:pointer;">Se connecter</button>
-      <p style="margin-top:1rem;font-size:0.95rem;color:#637470;">Pas encore de compte ? <a href="inscription.php" style="color:#0d6e5e;text-decoration:none;font-weight:600;">Inscrivez-vous</a></p>
+      <button type="submit" class="btn-submit">Se connecter</button>
     </form>
-  </main>
+
+    <div class="auth-footer">
+      Nouveau sur SmartHome ? <a href="inscription.php">Créer un compte</a>
+    </div>
+  </div>
+
 </body>
 </html>
