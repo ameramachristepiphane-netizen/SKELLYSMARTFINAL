@@ -24,19 +24,22 @@ $error   = '';
 // Traitement du formulaire uniquement en POST
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // Récupération et nettoyage des champs envoyés
-    $prenom = trim($_POST['prenom']   ?? '');
-    $nom    = trim($_POST['nom']      ?? '');
-    $email  = trim($_POST['email']    ?? '');
-    $mdp    = $_POST['password']      ?? '';
-    $profil = $_POST['profil']        ?? '';
+    $prenom = trim($_POST['prenom']         ?? '');
+    $nom    = trim($_POST['nom']            ?? '');
+    $email  = trim($_POST['email']          ?? '');
+    $mdp    = $_POST['password']            ?? '';
+    $confirmPassword = $_POST['confirm_password'] ?? '';
+    $profil = $_POST['profil']              ?? '';
 
     // Validation basique des champs
-    if (!$prenom || !$nom || !$email || !$mdp || !$profil) {
+    if (!$prenom || !$nom || !$email || !$mdp || !$confirmPassword || !$profil) {
         $error = 'Tous les champs sont obligatoires.'; // champs manquants
     } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
         $error = 'Adresse email invalide.'; // format email incorrect
     } elseif (strlen($mdp) < 8) {
         $error = 'Le mot de passe doit contenir au moins 8 caractères.'; // trop court
+    } elseif ($mdp !== $confirmPassword) {
+        $error = 'Les mots de passe ne correspondent pas.'; // confirmation incorrecte
     } else {
         // Mapping du libellé sélectionné vers la valeur attendue en base
         $situationMap = [
@@ -238,6 +241,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       <div class="form-group">
         <label for="password">Mot de passe :</label>
         <input type="password" id="password" name="password" required placeholder="8 caractères minimum">
+      </div>
+
+      <div class="form-group">
+        <label for="confirm_password">Confirmez le mot de passe :</label>
+        <input type="password" id="confirm_password" name="confirm_password" required placeholder="Retapez votre mot de passe">
       </div>
 
       <div class="form-group">

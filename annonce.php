@@ -55,6 +55,14 @@ if (!empty($annonce['image_locale']) && file_exists(__DIR__ . '/' . $annonce['im
 $meuble  = $annonce['meuble'] ? 'Meublé' : 'Non meublé';
 $charges = $annonce['charges_incluses'] ? 'Charges comprises' : 'Hors charges';
 $userConnecte = !empty($_SESSION['user_id']);
+
+// Récupérer les favoris de l'utilisateur connecté
+$isLiked = false;
+if ($userConnecte) {
+    $stmt = $pdo->prepare('SELECT id FROM favoris WHERE utilisateur_id = ? AND annonce_id = ?');
+    $stmt->execute([$_SESSION['user_id'], $idAnnonce]);
+    $isLiked = (bool)$stmt->fetch();
+}
 ?>
 
 <!DOCTYPE html>
@@ -136,6 +144,29 @@ $userConnecte = !empty($_SESSION['user_id']);
 
     .btn-contact { display: block; width: 100%; text-align: center; background: #00b894; color: #fff; padding: 1rem; border-radius: 12px; font-weight: 600; text-decoration: none; transition: background 0.3s ease; box-shadow: 0 4px 12px rgba(0, 184, 148, 0.2); }
     .btn-contact:hover { background: #00a383; }
+
+    /* Bouton like/favoris */
+    .like-btn {
+      background: rgba(255,255,255,0.92);
+      border: none;
+      border-radius: 50%;
+      width: 48px;
+      height: 48px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.5rem;
+      cursor: pointer;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      transition: transform 0.2s ease, background 0.2s ease;
+      z-index: 10;
+    }
+    .like-btn:hover {
+      transform: scale(1.15);
+    }
+    .like-btn.liked {
+      background: #fff0f3;
+    }
   </style>
 </head>
 <body>
@@ -151,6 +182,8 @@ $userConnecte = !empty($_SESSION['user_id']);
     <?php if ($userConnecte): ?>
       <!-- Affiche le prénom de l'utilisateur s'il est connecté -->
       <li><span class="user-welcome">Bonjour <?= htmlspecialchars($_SESSION['prenom'] ?? '') ?></span></li>
+      <li><a href="favoris.php" style="color: #00b894; font-weight: 600;">❤️ Mes favoris</a></li>
+      <li><a href="profil.php" style="color: #00b894; font-weight: 600;">Mon Profil</a></li>
       <li><a href="logout.php" class="nav-logout">Se déconnecter</a></li>
     <?php else: ?>
       <li><a href="connexion.php" class="nav-cta">Mon Compte</a></li>
@@ -171,6 +204,14 @@ $userConnecte = !empty($_SESSION['user_id']);
           <span class="badge-item badge-white">✓ Vérifié par SmartHome</span>
         <?php endif; ?>
       </div>
+      <?php if ($userConnecte): ?>
+        <button class="like-btn <?= $isLiked ? 'liked' : '' ?>"
+                onclick="toggleLike(this, <?= $idAnnonce ?>)"
+                title="<?= $isLiked ? 'Retirer des favoris' : 'Ajouter aux favoris' ?>"
+                style="position: absolute; top: 20px; right: 20px;">
+          <?= $isLiked ? '❤️' : '🤍' ?>
+        </button>
+      <?php endif; ?>
     </div>
 
     <!-- Titre et localisation -->
@@ -300,4 +341,39 @@ foreach ($equipements as $cle => $libelle):
 </div>
 
 </body>
+<script>
+function toggleLike(button, annonceId) {
+    const isLiked = button.classList.contains('liked');
+    const action = isLiked ? 'unlike' : 'like';
+    
+    const formData = new FormData();
+    formData.append('action', action);
+    formData.append('annonce_id', annonceId);
+    
+    fetch('like.php', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            if (data.liked) {
+                button.classList.add('liked');
+                button.textContent = '❤️';
+                button.title = 'Retirer des favoris';
+            } else {
+                button.classList.remove('liked');
+                button.textContent = '🤍';
+                button.title = 'Ajouter aux favoris';
+            }
+        } else {
+            alert('Erreur : ' + data.message);
+        }
+    })
+    .catch(error => {
+        console.error('Erreur:', error);
+        alert('Erreur lors de la mise à jour du favori');
+    });
+}
+</script>
 </html>

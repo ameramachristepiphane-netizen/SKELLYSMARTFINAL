@@ -37,6 +37,36 @@ try {
 
 // Booléen indiquant si l'utilisateur est connecté (présence d'un user_id en session)
 $userConnecte = !empty($_SESSION['user_id']);
+
+// Récupérer les favoris de l'utilisateur connecté
+$favoris = [];
+if ($userConnecte) {
+    $stmt = $pdo->prepare('SELECT annonce_id FROM favoris WHERE utilisateur_id = ?');
+    $stmt->execute([$_SESSION['user_id']]);
+    $favoris = array_column($stmt->fetchAll(), 'annonce_id');
+}
+
+// Récupérer les IDs des annonces likées par l'utilisateur connecté
+$likesUtilisateur = [];
+if ($userConnecte) {
+    try {
+        // Créer la table likes si elle n'existe pas
+        $pdo->exec("
+            CREATE TABLE IF NOT EXISTS likes (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                utilisateur_id INT NOT NULL,
+                annonce_id INT NOT NULL,
+                cree_le TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                UNIQUE KEY unique_like (utilisateur_id, annonce_id)
+            )
+        ");
+        $stmtLikes = $pdo->prepare('SELECT annonce_id FROM likes WHERE utilisateur_id = ?');
+        $stmtLikes->execute([(int)$_SESSION['user_id']]);
+        $likesUtilisateur = array_column($stmtLikes->fetchAll(), 'annonce_id');
+    } catch (PDOException $e) {
+        $likesUtilisateur = [];
+    }
+}
 ?>
 <!DOCTYPE html>
 <!-- Page d'accueil affichant la liste des annonces et la barre de recherche -->
@@ -89,7 +119,45 @@ $userConnecte = !empty($_SESSION['user_id']);
       font-weight: 600;
       color: #0d1f1c;
     }
+    .nav-add {
+      background: #0d1f1c;
+      color: #fff !important;
+      padding: 8px 18px;
+      border-radius: 20px;
+      font-weight: 600 !important;
+      transition: background 0.3s ease;
+    }
+    .nav-add:hover { background: #1a3d35; }
+    .nav-profil {
+      background: #f0f9f6;
+      color: #00b894 !important;
+      padding: 8px 18px;
+      border-radius: 20px;
+      font-weight: 600 !important;
+      border: 1px solid #00b894;
+      transition: background 0.3s ease;
+    }
+    .nav-profil:hover { background: #e0f5ef; }
 
+    /* Carte annonce avec bouton like */
+    .annonce-card { position: relative; }
+    .like-btn {
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      background: rgba(255,255,255,0.92);
+      border: none;
+      border-radius: 50%;
+      width: 38px; height: 38px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.2rem;
+      cursor: pointer;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.12);
+      transition: transform 0.2s ease, background 0.2s ease;
+      z-index: 2;
+    }
+    .like-btn:hover { transform: scale(1.15); }
+    .like-btn.liked { background: #fff0f3; }
     /* Styles de la barre de recherche */
     .search-container {
       max-width: 600px;
@@ -299,17 +367,18 @@ $userConnecte = !empty($_SESSION['user_id']);
 <nav>
   <a href="index.php" class="nav-logo">🏠 Smart<span>Home</span></a>
   <ul class="nav-links">
-    <li><a href="#how">Comment ça marche</a></li>
-    <li><a href="#why">Pourquoi nous ?</a></li>
-    <li><a href="#footer-contact">Contacts</a></li>
-    
     <?php if ($userConnecte): ?>
-      <!-- Affiche le prénom si présent en session -->
+      <!-- Utilisateur connecté : raccourcis actions -->
+      <li><a href="ajouter_annonce.php" class="nav-add">➕ Ajouter une annonce</a></li>
+      <li><a href="favoris.php" style="color: #00b894; font-weight: 600;">❤️ Mes favoris</a></li>
+      <li><a href="profil.php" class="nav-profil">👤 Mon profil</a></li>
       <li><span class="user-welcome">Bonjour <?= htmlspecialchars($_SESSION['prenom'] ?? 'utilisateur') ?></span></li>
-      <!-- Lien de déconnexion -->
       <li><a href="logout.php" class="nav-logout">Se déconnecter</a></li>
     <?php else: ?>
-      <!-- Lien vers la zone d'inscription/connexion lorsque non connecté -->
+      <!-- Visiteur non connecté : liens informatifs -->
+      <li><a href="#how">Comment ça marche</a></li>
+      <li><a href="#why">Pourquoi nous ?</a></li>
+      <li><a href="#footer-contact">Contacts</a></li>
       <li><a href="#cta" class="nav-cta">Mon Compte</a></li>
     <?php endif; ?>
   </ul>
@@ -346,7 +415,7 @@ $userConnecte = !empty($_SESSION['user_id']);
     <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 30px;">
       <?php foreach ($annonces as $a): ?>
         <!-- Carte annonce individuelle -->
-        <div style="background:#fff; border:1px solid #e2e8f0; border-radius:20px; overflow:hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.02);">
+        <div style="background:#fff; border:1px solid #e2e8f0; border-radius:20px; overflow:hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.02); position: relative;">
           <!-- Image (utilise Unsplash ou image par défaut si absent) -->
           <?php
 if (!empty($a['image_locale'])) {
@@ -356,8 +425,17 @@ if (!empty($a['image_locale'])) {
 } else {
     $imgCard = 'https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=600&q=80';
 }
+$isLiked = in_array($a['id'], $favoris);
 ?>
-<div style="height:200px; background-size:cover; background-position:center; background-image: url('<?= htmlspecialchars($imgCard) ?>');"></div>
+<div style="height:200px; background-size:cover; background-position:center; background-image: url('<?= htmlspecialchars($imgCard) ?>'); position:relative;">
+  <?php if ($userConnecte): ?>
+    <button class="like-btn <?= $isLiked ? 'liked' : '' ?>"
+            onclick="toggleLike(this, <?= $a['id'] ?>)"
+            title="<?= $isLiked ? 'Retirer des favoris' : 'Ajouter aux favoris' ?>">
+      <?= $isLiked ? '❤️' : '🤍' ?>
+    </button>
+  <?php endif; ?>
+</div>
           <div style="padding: 20px;">
             <!-- Titre et prix (sécurisés pour éviter XSS) -->
             <h3 style="font-family:'Syne'; font-size:1.2rem; margin-bottom:10px;"><?= htmlspecialchars($a['titre']) ?></h3>
@@ -664,4 +742,39 @@ if (!empty($a['image_locale'])) {
 </div>
 
 </body>
+<script>
+function toggleLike(button, annonceId) {
+    const isLiked = button.classList.contains('liked');
+    const action = isLiked ? 'unlike' : 'like';
+    
+    const formData = new FormData();
+    formData.append('action', action);
+    formData.append('annonce_id', annonceId);
+    
+    fetch('like.php', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            if (data.liked) {
+                button.classList.add('liked');
+                button.textContent = '❤️';
+                button.title = 'Retirer des favoris';
+            } else {
+                button.classList.remove('liked');
+                button.textContent = '🤍';
+                button.title = 'Ajouter aux favoris';
+            }
+        } else {
+            alert('Erreur : ' + data.message);
+        }
+    })
+    .catch(error => {
+        console.error('Erreur:', error);
+        alert('Erreur lors de la mise à jour du favori');
+    });
+}
+</script>
 </html>
