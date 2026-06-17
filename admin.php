@@ -92,8 +92,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 // ── Données pour la page ─────────────────────────────────────
 
+// Assurer la présence du champ dernier_connexion dans la table utilisateurs
+try {
+    $pdo->exec('ALTER TABLE utilisateurs ADD COLUMN dernier_connexion DATETIME NULL');
+} catch (PDOException $e) {
+    // ignore si déjà présent
+}
+
 // Tous les utilisateurs (sauf l'admin courant)
-$utilisateurs = $pdo->query('SELECT id, prenom, nom, email, role, actif, cree_le FROM utilisateurs ORDER BY cree_le DESC')->fetchAll();
+$utilisateurs = $pdo->query('SELECT id, prenom, nom, email, telephone, role, actif, cree_le, dernier_connexion FROM utilisateurs ORDER BY cree_le DESC')->fetchAll();
 
 // Toutes les annonces avec nom du propriétaire
 $annonces = $pdo->query('
@@ -142,10 +149,9 @@ $nbDispo    = count(array_filter($annonces, fn($a) => $a['statut'] === 'disponib
     body { background: #f4f7f6; font-family: 'DM Sans', sans-serif; color: #0d1f1c; }
 
     .admin-wrapper {
-      display: grid;
-      grid-template-columns: 240px 1fr;
       min-height: 100vh;
       padding-top: 70px;
+      position: relative;
     }
 
     /* ── Sidebar ── */
@@ -159,6 +165,13 @@ $nbDispo    = count(array_filter($annonces, fn($a) => $a['statut'] === 'disponib
       overflow-y: auto;
       padding: 1.5rem 0;
       z-index: 50;
+    }
+
+    .admin-main {
+      margin-left: 240px;
+      padding: 2rem;
+      min-height: calc(100vh - 70px);
+      overflow-x: hidden;
     }
     .sidebar-section { padding: 0 1.2rem; margin-bottom: 0.5rem; }
     .sidebar-label {
@@ -195,6 +208,39 @@ $nbDispo    = count(array_filter($annonces, fn($a) => $a['statut'] === 'disponib
     /* ── Tabs ── */
     .tab-panel { display: none; }
     .tab-panel.active { display: block; }
+
+    /* ── Admin tables ── */
+    .admin-table-wrap {
+      overflow-x: auto;
+      background: #fff;
+      border: 1px solid #e8e8e8;
+      border-radius: 18px;
+      padding: 1rem;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.04);
+      margin-bottom: 1.8rem;
+    }
+    .admin-table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 720px;
+      font-size: 0.95rem;
+      color: #111;
+    }
+    .admin-table th,
+    .admin-table td {
+      padding: 14px 16px;
+      border-bottom: 1px solid #eef1f1;
+      text-align: left;
+      vertical-align: middle;
+    }
+    .admin-table th {
+      font-weight: 700;
+      color: #2f4441;
+      background: #f8faf9;
+    }
+    .admin-table tbody tr:hover {
+      background: #f7fbfa;
+    }
 
     /* ── Cards stats ── */
     .stats-row {
@@ -401,7 +447,7 @@ $nbDispo    = count(array_filter($annonces, fn($a) => $a['statut'] === 'disponib
     .user-welcome { font-weight: 600; color: #0d1f1c; }
 
     @media (max-width: 900px) {
-      .admin-wrapper { grid-template-columns: 1fr; }
+      .admin-wrapper { padding-top: 70px; }
       .sidebar { display: none; }
       .admin-main { margin-left: 0; }
       .stats-row { grid-template-columns: 1fr 1fr; }
@@ -427,19 +473,19 @@ $nbDispo    = count(array_filter($annonces, fn($a) => $a['statut'] === 'disponib
   <aside class="sidebar">
     <span class="sidebar-label">Tableau de bord</span>
     <div class="sidebar-section">
-      <button class="sidebar-link active" onclick="showTab('dashboard')">
+      <button class="sidebar-link active" data-tab="dashboard" onclick="showTab('dashboard', this)">
         <span class="ico">📊</span> Vue générale
       </button>
     </div>
     <span class="sidebar-label">Gestion</span>
     <div class="sidebar-section">
-      <button class="sidebar-link" onclick="showTab('annonces')">
+      <button class="sidebar-link" data-tab="annonces" onclick="showTab('annonces', this)">
         <span class="ico">🏠</span> Annonces
       </button>
-      <button class="sidebar-link" onclick="showTab('utilisateurs')">
+      <button class="sidebar-link" data-tab="utilisateurs" onclick="showTab('utilisateurs', this)">
         <span class="ico">👥</span> Utilisateurs
       </button>
-      <button class="sidebar-link" onclick="showTab('messagerie')">
+      <button class="sidebar-link" data-tab="messagerie" onclick="showTab('messagerie', this)">
         <span class="ico">💬</span> Messagerie
       </button>
     </div>
@@ -491,7 +537,7 @@ $nbDispo    = count(array_filter($annonces, fn($a) => $a['statut'] === 'disponib
       <!-- Dernières annonces -->
       <div class="section-header">
         <h2>Dernières annonces</h2>
-        <button class="btn-action btn-green" onclick="showTab('annonces')">Voir tout →</button>
+        <button class="btn-action btn-green" onclick="showTab('annonces', this)">Voir tout →</button>
       </div>
       <div class="admin-table-wrap">
         <table class="admin-table">
@@ -514,12 +560,12 @@ $nbDispo    = count(array_filter($annonces, fn($a) => $a['statut'] === 'disponib
       <!-- Derniers utilisateurs -->
       <div class="section-header">
         <h2>Derniers inscrits</h2>
-        <button class="btn-action btn-green" onclick="showTab('utilisateurs')">Voir tout →</button>
+        <button class="btn-action btn-green" onclick="showTab('utilisateurs', this)">Voir tout →</button>
       </div>
       <div class="admin-table-wrap">
         <table class="admin-table">
           <thead>
-            <tr><th>Nom</th><th>Email</th><th>Rôle</th><th>Inscrit le</th></tr>
+            <tr><th>ID</th><th>Nom</th><th>Email</th><th>Rôle</th><th>Dernière connexion</th><th>Inscrit le</th></tr>
           </thead>
           <tbody>
             <?php foreach (array_slice($utilisateurs, 0, 5) as $u): ?>
@@ -527,6 +573,7 @@ $nbDispo    = count(array_filter($annonces, fn($a) => $a['statut'] === 'disponib
               <td><?= htmlspecialchars($u['prenom'] . ' ' . $u['nom']) ?></td>
               <td><?= htmlspecialchars($u['email']) ?></td>
               <td><span class="badge-status badge-<?= $u['role'] ?>"><?= ucfirst($u['role']) ?></span></td>
+              <td><?= $u['dernier_connexion'] ? date('d/m/Y H:i', strtotime($u['dernier_connexion'])) : 'Jamais' ?></td>
               <td><?= date('d/m/Y', strtotime($u['cree_le'])) ?></td>
             </tr>
             <?php endforeach; ?>
@@ -594,18 +641,14 @@ $nbDispo    = count(array_filter($annonces, fn($a) => $a['statut'] === 'disponib
               <td style="color:#8a9e99;">#<?= $u['id'] ?></td>
               <td style="font-weight:500;"><?= htmlspecialchars($u['prenom'] . ' ' . $u['nom']) ?></td>
               <td style="color:#637470;"><?= htmlspecialchars($u['email']) ?></td>
-              <td><?php
-                $tel = $pdo->prepare('SELECT telephone FROM utilisateurs WHERE id = ?');
-                $tel->execute([$u['id']]);
-                $telRow = $tel->fetch();
-                echo htmlspecialchars($telRow['telephone'] ?? '—');
-              ?></td>
+              <td><?= htmlspecialchars($u['telephone'] ?? '—') ?></td>
               <td><span class="badge-status badge-<?= $u['role'] ?>"><?= ucfirst($u['role']) ?></span></td>
               <td>
                 <span style="font-size:12px;color:<?= $u['actif'] ? '#085041' : '#8f1b1b' ?>;">
                   <?= $u['actif'] ? '● Actif' : '○ Inactif' ?>
                 </span>
               </td>
+              <td><?= $u['dernier_connexion'] ? date('d/m/Y H:i', strtotime($u['dernier_connexion'])) : 'Jamais' ?></td>
               <td><?= date('d/m/Y', strtotime($u['cree_le'])) ?></td>
               <td>
                 <?php if ($u['id'] !== $adminId): ?>
@@ -636,7 +679,7 @@ $nbDispo    = count(array_filter($annonces, fn($a) => $a['statut'] === 'disponib
           <h3>Collaborateurs</h3>
           <?php foreach ($collaborateurs as $c): ?>
             <?php if ($c['id'] === $adminId) continue; ?>
-            <button class="contact-item" onclick="selectContact(<?= $c['id'] ?>, '<?= addslashes(htmlspecialchars($c['prenom'] . ' ' . $c['nom'])) ?>')">
+            <button class="contact-item" onclick="selectContact(<?= $c['id'] ?>, '<?= addslashes(htmlspecialchars($c['prenom'] . ' ' . $c['nom'])) ?>', this)">
               <div class="contact-avatar"><?= strtoupper(substr($c['prenom'], 0, 1)) ?></div>
               <div>
                 <div class="contact-name"><?= htmlspecialchars($c['prenom'] . ' ' . $c['nom']) ?></div>
@@ -724,12 +767,38 @@ $nbDispo    = count(array_filter($annonces, fn($a) => $a['statut'] === 'disponib
   const adminId = <?= $adminId ?>;
 
   // ── Navigation tabs ──
-  function showTab(name) {
+  function showTab(name, button) {
+    const target = document.getElementById('tab-' + name);
+    if (!target) return;
+
     document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
     document.querySelectorAll('.sidebar-link').forEach(l => l.classList.remove('active'));
-    document.getElementById('tab-' + name).classList.add('active');
-    event.currentTarget.classList.add('active');
+
+    target.classList.add('active');
+
+    const sidebarBtn = button && button.classList.contains('sidebar-link')
+      ? button
+      : document.querySelector('.sidebar-link[data-tab="' + name + '"]');
+
+    if (sidebarBtn) {
+      sidebarBtn.classList.add('active');
+    }
   }
+
+  window.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('.sidebar-link[data-tab]').forEach(btn => {
+      btn.addEventListener('click', function(e) {
+        e.preventDefault();
+        showTab(this.dataset.tab, this);
+      });
+    });
+
+    const hash = window.location.hash.replace('#','');
+    if (hash && document.getElementById('tab-' + hash)) {
+      const button = document.querySelector('.sidebar-link[data-tab="' + hash + '"]');
+      showTab(hash, button);
+    }
+  });
 
   // ── Modal annonce ──
   function openEditModal(id, titre, loyer, statut) {
@@ -747,7 +816,7 @@ $nbDispo    = count(array_filter($annonces, fn($a) => $a['statut'] === 'disponib
   });
 
   // ── Messagerie : sélection contact ──
-  function selectContact(contactId, contactName) {
+  function selectContact(contactId, contactName, button) {
     // Mettre à jour le titre
     document.getElementById('chat-title').textContent = '💬 ' + contactName;
     document.getElementById('dest-id').value = contactId;
@@ -755,7 +824,9 @@ $nbDispo    = count(array_filter($annonces, fn($a) => $a['statut'] === 'disponib
 
     // Mettre en surbrillance le contact sélectionné
     document.querySelectorAll('.contact-item').forEach(el => el.classList.remove('selected'));
-    event.currentTarget.classList.add('selected');
+    if (button && button.classList) {
+      button.classList.add('selected');
+    }
 
     // Afficher les messages liés à ce contact
     let hasMessages = false;

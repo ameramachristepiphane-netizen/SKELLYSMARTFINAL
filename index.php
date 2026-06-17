@@ -107,35 +107,45 @@ if ($userConnecte) {
     .nav-logout {
       background: #feecec;
       color: #8f1b1b !important;
-      padding: 8px 18px;
-      border-radius: 20px;
-      font-weight: 600 !important;
-      transition: background 0.3s ease;
     }
     .nav-logout:hover {
       background: #fcd7d7;
     }
+
     .user-welcome {
       font-weight: 600;
       color: #0d1f1c;
     }
+    /* Classe commune pour tous les boutons de navigation */
+    .nav-btn {
+      display: inline-block;
+      padding: 6px 12px;
+      border-radius: 16px;
+      font-weight: 600 !important;
+      transition: background 0.3s ease;
+      text-decoration: none;
+      border: none;
+      cursor: pointer;
+      font-size: 0.9rem;
+    }
+
     .nav-add {
       background: #0d1f1c;
       color: #fff !important;
-      padding: 8px 18px;
-      border-radius: 20px;
-      font-weight: 600 !important;
-      transition: background 0.3s ease;
     }
     .nav-add:hover { background: #1a3d35; }
+
+    .nav-favs {
+      background: #ffffff;
+      color: #00b894 !important;
+      border: 1px solid #00b894;
+    }
+    .nav-favs:hover { background: #f0f9f6; }
+
     .nav-profil {
       background: #f0f9f6;
       color: #00b894 !important;
-      padding: 8px 18px;
-      border-radius: 20px;
-      font-weight: 600 !important;
       border: 1px solid #00b894;
-      transition: background 0.3s ease;
     }
     .nav-profil:hover { background: #e0f5ef; }
 
@@ -369,11 +379,12 @@ if ($userConnecte) {
   <ul class="nav-links">
     <?php if ($userConnecte): ?>
       <!-- Utilisateur connecté : raccourcis actions -->
-      <li><a href="ajouter_annonce.php" class="nav-add">➕ Ajouter une annonce</a></li>
-      <li><a href="favoris.php" style="color: #00b894; font-weight: 600;">❤️ Mes favoris</a></li>
-      <li><a href="profil.php" class="nav-profil">👤 Mon profil</a></li>
-      <li><span class="user-welcome">Bonjour <?= htmlspecialchars($_SESSION['prenom'] ?? 'utilisateur') ?></span></li>
-      <li><a href="logout.php" class="nav-logout">Se déconnecter</a></li>
+      <li><a href="ajouter_annonce.php" class="nav-btn nav-add">➕ Ajouter une annonce</a></li>
+      <li><a href="favoris.php" class="nav-btn nav-favs">❤️ Mes favoris</a></li>
+      <li><a href="profil.php" class="nav-btn nav-profil">👤 Mon profil</a></li>      <?php if (!empty($_SESSION['admin_id'])): ?>
+      <li><a href="admin.php" class="nav-btn nav-favs">🛠 Admin</a></li>
+      <?php endif; ?>      <li><span class="user-welcome">Bonjour <?= htmlspecialchars($_SESSION['prenom'] ?? 'utilisateur') ?></span></li>
+      <li><a href="logout.php" class="nav-btn nav-logout">Se déconnecter</a></li>
     <?php else: ?>
       <!-- Visiteur non connecté : liens informatifs -->
       <li><a href="#how">Comment ça marche</a></li>
@@ -418,7 +429,7 @@ if ($userConnecte) {
         <div style="background:#fff; border:1px solid #e2e8f0; border-radius:20px; overflow:hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.02); position: relative;">
           <!-- Image (utilise Unsplash ou image par défaut si absent) -->
           <?php
-if (!empty($a['image_locale'])) {
+if (!empty($a['image_locale']) && file_exists(__DIR__ . '/' . $a['image_locale'])) {
     $imgCard = $a['image_locale'];
 } elseif (!empty($a['image_unsplash'])) {
     $imgCard = 'https://images.unsplash.com/photo-' . $a['image_unsplash'] . '?w=600&q=80';

@@ -42,7 +42,6 @@ if (!$annonce) {
     die("Annonce introuvable ou indisponible.");
 }
 
-// CORRECT — remplace ce bloc :
 if (!empty($annonce['image_locale']) && file_exists(__DIR__ . '/' . $annonce['image_locale'])) {
     $imgPrincipal = $annonce['image_locale'];
 } elseif (!empty($annonce['image_unsplash'])) {

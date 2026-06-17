@@ -87,6 +87,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
           $_SESSION['nom']     = $userData['nom'];
           $_SESSION['role']    = $userData['role'];
 
+          if (!$isAdmin) {
+            try {
+              $pdo->exec('ALTER TABLE utilisateurs ADD COLUMN dernier_connexion DATETIME NULL');
+            } catch (PDOException $e) {
+              // ignore if column already exists
+            }
+            $updateLogin = $pdo->prepare('UPDATE utilisateurs SET dernier_connexion = NOW() WHERE id = ?');
+            $updateLogin->execute([$userData['id']]);
+          }
+
           if ($isAdmin) {
             $_SESSION['admin_id']     = $userData['id'];
             $_SESSION['admin_prenom'] = $userData['prenom'];
