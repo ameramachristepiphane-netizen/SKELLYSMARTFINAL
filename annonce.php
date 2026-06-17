@@ -30,16 +30,21 @@ if (!$annonce) {
     die("Annonce introuvable ou indisponible.");
 }
 
-// Détermine l'image principale : utilise Unsplash si disponible sinon image par défaut
-$imgPrincipal = $annonce['image_unsplash']
-    ? 'https://images.unsplash.com/photo-' . $annonce['image_unsplash'] . '?w=1200&q=80'
-    : 'https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=1200&q=80';
+// CORRECT — remplace ce bloc :
+if (!empty($annonce['image_locale']) && file_exists(__DIR__ . '/' . $annonce['image_locale'])) {
+    $imgPrincipal = $annonce['image_locale'];
+} elseif (!empty($annonce['image_unsplash'])) {
+    $imgPrincipal = 'https://images.unsplash.com/photo-' . $annonce['image_unsplash'] . '?w=1200&q=80';
+} else {
+    $imgPrincipal = 'https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=1200&q=80';
+}
 
 // Formatage rapide de quelques labels pour l'affichage
 $meuble  = $annonce['meuble'] ? 'Meublé' : 'Non meublé';
 $charges = $annonce['charges_incluses'] ? 'Charges comprises' : 'Hors charges';
 $userConnecte = !empty($_SESSION['user_id']);
 ?>
+
 <!DOCTYPE html>
 <html lang="fr">
 <head>
@@ -193,25 +198,33 @@ $userConnecte = !empty($_SESSION['user_id']);
       <h2>Équipements & Caractéristiques</h2>
       <div class="equipements-list">
         <?php
-        $equipements = [
-            'ascenseur'   => '🛗 Ascenseur',
-            'digicode'    => '🔒 Digicode / Code d\'accès',
-            'gardien'     => '💂 Gardien de l\'immeuble',
-            'cave'        => '📦 Cave privative',
-            'parking'     => '🚗 Place de parking',
-            'balcon'      => '🌿 Balcon / Extérieur',
-            'fibre'       => '⚡ Connexion Fibre Internet',
-            'lave_linge'  => '🧺 Lave-linge inclus'
-        ];
+       $equipements = [
+    'ascenseur'   => '🛗 Ascenseur',
+    'digicode'    => '🔒 Digicode / Code d\'accès',
+    'gardien'     => '💂 Gardien de l\'immeuble',
+    'cave'        => '📦 Cave privative',
+    'parking'     => '🚗 Place de parking',
+    'balcon'      => '🌿 Balcon / Extérieur',
+    'fibre'       => '⚡ Connexion Fibre Internet',
+    'lave_linge'  => '🧺 Lave-linge inclus'
+];
 
-        foreach ($equipements as $cle => $libelle):
-          // Vérifie si l'équipement est présent dans l'annonce
-          $present = !empty($annonce[$cle]);
-        ?>
-          <div class="equipement-item <?= $present ? 'checked' : 'unchecked' ?>">
-            <?= $present ? '✓' : '✗' ?> <?= $libelle ?>
-          </div>
-        <?php endforeach; ?>
+// Équipements toujours inclus pour Chambre et Colocation
+$toujours_inclus = ['ascenseur', 'digicode', 'fibre', 'lave_linge'];
+$est_chambre_coloc = in_array($annonce['type_logement'], ['Chambre', 'Colocation', 'T1']);
+
+foreach ($equipements as $cle => $libelle):
+  $present = !empty($annonce[$cle]);
+  
+  // Pour Chambre/Colocation, certains équipements sont toujours considérés présents
+  if ($est_chambre_coloc && in_array($cle, $toujours_inclus)) {
+      $present = true;
+  }
+?>
+  <div class="equipement-item <?= $present ? 'checked' : 'unchecked' ?>">
+    <?= $present ? '✓' : '✗' ?> <?= $libelle ?>
+  </div>
+<?php endforeach; ?>
       </div>
     </div>
   </div>
