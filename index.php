@@ -135,6 +135,159 @@ $userConnecte = !empty($_SESSION['user_id']);
     .clear-search:hover {
       color: #00b894;
     }
+
+    /* --- SECTION POURQUOI CHOISIR SMARTHOME --- */
+.why-section {
+  max-width: 1200px;
+  margin: 80px auto;
+  padding: 0 20px;
+  font-family: 'DM Sans', sans-serif;
+}
+
+.why-container {
+  display: grid;
+  grid-template-columns: 1.1fr 0.9fr;
+  gap: 50px;
+  align-items: center;
+}
+
+/* Côté gauche - Texte */
+.why-tag {
+  color: #00b894;
+  font-weight: 700;
+  font-size: 0.85rem;
+  letter-spacing: 25px;
+  text-transform: uppercase;
+  display: block;
+  margin-bottom: 10px;
+}
+
+.why-title {
+  font-family: 'Syne', sans-serif;
+  font-size: 2.6rem;
+  font-weight: 800;
+  color: #0d1f1c;
+  line-height: 1.2;
+  margin-bottom: 15px;
+}
+
+.why-subtitle {
+  color: #637470;
+  font-size: 1.1rem;
+  line-height: 1.6;
+  margin-bottom: 35px;
+}
+
+/* Cartes des avantages */
+.advantage-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.adv-card {
+  display: flex;
+  gap: 15px;
+  background: #fff;
+  padding: 16px;        /* était 25px */
+  border-radius: 16px;  /* était 20px */
+  box-shadow: 0 10px 30px rgba(13,31,28,0.03);
+  border: 1px solid #f0f4f3;
+}
+
+.adv-icon {
+  width: 40px;          /* était 50px */
+  height: 40px;         /* était 50px */
+  border-radius: 10px;  /* était 14px */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.1rem;    /* était 1.4rem */
+  flex-shrink: 0;
+}
+
+.adv-content h3 {
+  font-size: 1rem;      /* était 1.2rem */
+  color: #0d1f1c;
+  margin-bottom: 5px;
+  font-weight: 600;
+}
+
+.adv-content p {
+  color: #637470;
+  font-size: 0.88rem;   /* était 0.95rem */
+  line-height: 1.5;
+}
+
+.advantage-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;            /* était 20px */
+}
+/* NOUVEAU - à coller à la place */
+.comparison-table {
+  border-radius: 16px;
+  overflow: hidden;
+  border: 1px solid #e5e7eb;
+  background: #fff;
+  width: 100%;
+  max-width: 550px;
+}
+
+.table-header {
+  background: #2ec4a5;
+  padding: 22px 28px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.th-left {
+  color: #fff;
+  font-weight: 700;
+  font-size: 1.05rem;
+}
+
+.th-right {
+  color: #fff;
+  font-weight: 700;
+  font-size: 1.05rem;
+}
+
+.table-row {
+  display: flex;
+  align-items: center;
+  padding: 18px 28px;
+  border-bottom: 1px solid #f0f0f0;
+  gap: 100px;
+}
+
+.table-row:last-child {
+  border-bottom: none;
+}
+
+.row-label {
+  flex: 4;
+  font-size: 0.95rem;
+  color: #1a1a2e;
+  font-weight: 500;
+}
+.row-val {
+  width: 60px;
+  text-align: center;
+  font-size: 1.1rem;
+  font-weight: 700;
+}
+
+.row-cross { color: #e33c3c; }
+.row-check { color: #2ec4a5; }
+
+/* Responsive Mobile */
+@media (max-width: 968px) {
+  .why-container { grid-template-columns: 1fr; gap: 40px; }
+  .why-title { font-size: 2rem; }
+}
+
   </style>
 </head>
  
@@ -194,7 +347,16 @@ $userConnecte = !empty($_SESSION['user_id']);
         <!-- Carte annonce individuelle -->
         <div style="background:#fff; border:1px solid #e2e8f0; border-radius:20px; overflow:hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.02);">
           <!-- Image (utilise Unsplash ou image par défaut si absent) -->
-          <div style="height:200px; background-size:cover; background-position:center; background-image: url('https://images.unsplash.com/photo-<?= !empty($a['image_unsplash']) ? $a['image_unsplash'] : '1502672260266-1c1ef2d93688' ?>?w=600&q=80');"></div>
+          <?php
+if (!empty($a['image_locale'])) {
+    $imgCard = $a['image_locale'];
+} elseif (!empty($a['image_unsplash'])) {
+    $imgCard = 'https://images.unsplash.com/photo-' . $a['image_unsplash'] . '?w=600&q=80';
+} else {
+    $imgCard = 'https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=600&q=80';
+}
+?>
+<div style="height:200px; background-size:cover; background-position:center; background-image: url('<?= htmlspecialchars($imgCard) ?>');"></div>
           <div style="padding: 20px;">
             <!-- Titre et prix (sécurisés pour éviter XSS) -->
             <h3 style="font-family:'Syne'; font-size:1.2rem; margin-bottom:10px;"><?= htmlspecialchars($a['titre']) ?></h3>
@@ -207,7 +369,252 @@ $userConnecte = !empty($_SESSION['user_id']);
   <?php endif; ?>
   
 </section>
- 
+<!-- ============================================ -->
+<!-- Section : Comment ça marche                 -->
+<!-- A coller dans index.php avant le footer     -->
+<!-- ============================================ -->
+
+<section id="how" style="
+  background: #0d2b25;
+  padding: 80px 20px;
+  margin: 60px 0;
+">
+  <div style="max-width: 1100px; margin: 0 auto;">
+
+    <!-- En-tête de section -->
+    <span style="
+      background: #1a3d35;
+      color: #00b894;
+      font-size: 0.8rem;
+      font-weight: 700;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      padding: 6px 16px;
+      border-radius: 20px;
+      display: inline-block;
+      margin-bottom: 20px;
+    ">PROCESSUS</span>
+
+    <h2 style="
+      font-family: 'Syne', sans-serif;
+      font-size: 3rem;
+      font-weight: 800;
+      color: #ffffff;
+      margin: 0 0 15px 0;
+      line-height: 1.1;
+    ">Comment ça marche ?</h2>
+
+    <p style="
+      color: #7aa99a;
+      font-size: 1.05rem;
+      margin-bottom: 50px;
+      max-width: 500px;
+      line-height: 1.6;
+    ">En 3 étapes simples, SmartHome vous trouve un logement adapté et vous accompagne jusqu'à l'emménagement.</p>
+
+    <!-- Grille des 3 étapes -->
+    <div style="
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 24px;
+    ">
+
+      <!-- Étape 01 -->
+      <div style="
+        background: #122e27;
+        border: 1px solid #1e4a40;
+        border-radius: 20px;
+        padding: 2.5rem;
+        position: relative;
+        overflow: hidden;
+      ">
+        <div style="
+          font-family: 'Syne', sans-serif;
+          font-size: 5rem;
+          font-weight: 800;
+          color: #1a3d35;
+          position: absolute;
+          top: 10px;
+          left: 20px;
+          line-height: 1;
+          user-select: none;
+        ">01</div>
+        <div style="position: relative; z-index: 1; margin-top: 40px;">
+          <div style="font-size: 2.5rem; margin-bottom: 15px;">🎯</div>
+          <h3 style="
+            font-family: 'Syne', sans-serif;
+            color: #ffffff;
+            font-size: 1.3rem;
+            margin: 0 0 10px 0;
+          ">Créez votre profil</h3>
+          <p style="color: #7aa99a; font-size: 0.95rem; line-height: 1.6; margin: 0;">
+            Renseignez votre budget, votre situation et vos préférences. Notre système analyse vos besoins pour trouver les meilleures offres.
+          </p>
+        </div>
+      </div>
+
+      <!-- Étape 02 -->
+      <div style="
+        background: #122e27;
+        border: 1px solid #1e4a40;
+        border-radius: 20px;
+        padding: 2.5rem;
+        position: relative;
+        overflow: hidden;
+      ">
+        <div style="
+          font-family: 'Syne', sans-serif;
+          font-size: 5rem;
+          font-weight: 800;
+          color: #1a3d35;
+          position: absolute;
+          top: 10px;
+          left: 20px;
+          line-height: 1;
+          user-select: none;
+        ">02</div>
+        <div style="position: relative; z-index: 1; margin-top: 40px;">
+          <div style="font-size: 2.5rem; margin-bottom: 15px;">🤝</div>
+          <h3 style="
+            font-family: 'Syne', sans-serif;
+            color: #ffffff;
+            font-size: 1.3rem;
+            margin: 0 0 10px 0;
+          ">Entrez en contact</h3>
+          <p style="color: #7aa99a; font-size: 0.95rem; line-height: 1.6; margin: 0;">
+            SmartHome vous met en relation directe avec les propriétaires vérifiés. Posez vos questions et organisez vos visites facilement.
+          </p>
+        </div>
+      </div>
+
+      <!-- Étape 03 -->
+      <div style="
+        background: #122e27;
+        border: 1px solid #1e4a40;
+        border-radius: 20px;
+        padding: 2.5rem;
+        position: relative;
+        overflow: hidden;
+      ">
+        <div style="
+          font-family: 'Syne', sans-serif;
+          font-size: 5rem;
+          font-weight: 800;
+          color: #1a3d35;
+          position: absolute;
+          top: 10px;
+          left: 20px;
+          line-height: 1;
+          user-select: none;
+        ">03</div>
+        <div style="position: relative; z-index: 1; margin-top: 40px;">
+          <div style="font-size: 2.5rem; margin-bottom: 15px;">🏠</div>
+          <h3 style="
+            font-family: 'Syne', sans-serif;
+            color: #ffffff;
+            font-size: 1.3rem;
+            margin: 0 0 10px 0;
+          ">Emménagez sereinement</h3>
+          <p style="color: #7aa99a; font-size: 0.95rem; line-height: 1.6; margin: 0;">
+            Une fois le logement trouvé, nos assistants vous accompagnent dans toutes les démarches administratives jusqu'à votre emménagement.
+          </p>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+<section id="why" class="why-section">
+  <div class="why-container">
+    
+    <div class="why-text-side">
+      <span class="why-tag">NOS AVANTAGES</span>
+      <h2 class="why-title">Pourquoi choisir SmartHome ?</h2>
+      <p class="why-subtitle">Contrairement aux plateformes classiques, nous offrons un accompagnement complet et personnalisé à chaque étape.</p>
+      
+    <div class="advantage-cards">
+      <div class="adv-card">
+      <div class="adv-icon icon-lightning">⚡</div>
+      <div class="adv-content">
+      <h3>Gain de temps considérable</h3>
+      <p>Fini les heures perdues à trier des centaines d'annonces. Nous sélectionnons uniquement ce qui correspond à votre profil.</p>
+    </div>
+  </div>
+  
+  <div class="adv-card">
+    <div class="adv-icon icon-brain">🧠</div>
+    <div class="adv-content">
+      <h3>Recommandations intelligentes</h3>
+      <p>Nous analysons votre budget, votre mode de vie et vos besoins pour des suggestions vraiment pertinentes.</p>
+    </div>
+  </div>
+
+  <!-- NOUVELLES CARTES -->
+  <div class="adv-card">
+    <div class="adv-icon icon-shield">🛡️</div>
+    <div class="adv-content">
+      <h3>Annonces vérifiées</h3>
+      <p>Chaque annonce est contrôlée. Aucune arnaque, aucun doublon — seulement des logements réels disponibles.</p>
+    </div>
+  </div>
+
+  <div class="adv-card">
+    <div class="adv-icon icon-plant">🪴</div>
+    <div class="adv-content">
+      <h3>Aide à l'aménagement</h3>
+      <p>Après l'emménagement, nos assistants vous proposent des idées de décoration et d'optimisation de votre espace.</p>
+    </div>
+  </div>
+</div>
+    </div>
+    
+    <div class="why-table-side">
+      <div class="comparison-table">
+  <div class="table-header">
+    <span class="th-left">Concurrents</span>
+    <span class="th-right">SmartHome</span>
+  </div>
+
+  <div class="table-row">
+    <span class="row-label">Recommandations personnalisées</span>
+    <span class="row-val row-cross">✕</span>
+    <span class="row-val row-check">✓</span>
+  </div>
+
+  <div class="table-row">
+    <span class="row-label">Accompagnement complet</span>
+    <span class="row-val row-cross">✕</span>
+    <span class="row-val row-check">✓</span>
+  </div>
+
+  <div class="table-row">
+    <span class="row-label">Aide à l'aménagement</span>
+    <span class="row-val row-cross">✕</span>
+    <span class="row-val row-check">✓</span>
+  </div>
+
+  <div class="table-row">
+    <span class="row-label">Annonces vérifiées sans doublons</span>
+    <span class="row-val row-cross">✕</span>
+    <span class="row-val row-check">✓</span>
+  </div>
+
+  <div class="table-row">
+    <span class="row-label">Profil adapté à l'étranger</span>
+    <span class="row-val row-cross">✕</span>
+    <span class="row-val row-check">✓</span>
+  </div>
+
+  <div class="table-row">
+    <span class="row-label">Support réactif 24h/24 et 7j/7</span>
+    <span class="row-val row-cross">✕</span>
+    <span class="row-val row-check">✓</span>
+  </div>
+</div>
+    </div>
+
+  </div>
+</section>
 <!-- Section CTA pour inscription/connexion -->
 <section class="cta-section" id="cta">
   <span class="section-tag">Rejoignez-nous</span>
@@ -218,7 +625,9 @@ $userConnecte = !empty($_SESSION['user_id']);
     <div class="cta-buttons" style="margin-top: 20px;">
       <a href="logout.php" class="nav-logout" style="display: inline-block; text-decoration: none;">Se déconnecter</a>
     </div>
+    
   <?php else: ?>
+    
     <h2 class="section-title">Prêt à trouver votre logement ?</h2>
     <p class="section-sub">Que vous soyez à la recherche d'un toit ou propriétaire souhaitant louer, SmartHome AI est fait pour vous.</p>
     <div class="cta-buttons">
