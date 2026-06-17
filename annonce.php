@@ -2,23 +2,8 @@
 // Démarre la session pour gérer l'état utilisateur
 session_start();
 
-// ── Connexion MySQL (PDO) ────────────────────────────────────
-// Paramètres de connexion (adapter selon l'environnement)
-$host   = '127.0.0.1';
-$dbname = 'smarthome';
-$user   = 'root';
-$pass   = 'root';
-
-// Création de l'objet PDO avec gestion des exceptions
-try {
-    $pdo = new PDO("mysql:host=$host;dbname=$dbname;charset=utf8mb4", $user, $pass, [
-        PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
-        PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
-    ]);
-} catch (PDOException $e) {
-    // En cas d'erreur de connexion, on affiche un message générique
-    die("Erreur de connexion à la base de données.");
-}
+// Utiliser la configuration centralisée de la base de données
+require_once __DIR__ . '/config.php';
 
 // Récupère l'ID de l'annonce passée en paramètre GET (cast en int pour sécurité)
 $idAnnonce = isset($_GET['id']) ? (int)$_GET['id'] : 0;

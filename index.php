@@ -2,35 +2,25 @@
 // Démarrage de la session pour gérer l'état d'authentification
 session_start();
 
-// ── Connexion MySQL directe (PDO) ──────────────────────────────────
-// Paramètres de connexion (à adapter selon l'environnement)
-$host   = '127.0.0.1';
-$dbname = 'smarthome';
-$user   = 'root';
-$pass   = 'root';
+// Utiliser la configuration centralisée de la base de données
+require_once __DIR__ . '/config.php';
+
+// Récupération du paramètre de recherche depuis la query string (GET)
+$search = isset($_GET['search']) ? trim($_GET['search']) : '';
 
 try {
-    // Création d'un nouvel objet PDO pour interagir avec la BDD
-    $pdo = new PDO("mysql:host=$host;dbname=$dbname;charset=utf8mb4", $user, $pass, [
-        PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
-        PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
-    ]);
-    
-    // Récupération du paramètre de recherche depuis la query string (GET)
-    $search = isset($_GET['search']) ? trim($_GET['search']) : '';
-    
-    if (!empty($search)) {
-        // Prépare une requête pour rechercher dans plusieurs colonnes (titre, quartier, description)
-        $stmt = $pdo->prepare('SELECT * FROM v_annonces_disponibles WHERE titre LIKE ? OR quartier LIKE ? OR description LIKE ? ORDER BY cree_le DESC');
-        $stmt->execute(["%$search%", "%$search%", "%$search%"]);
-        $annonces = $stmt->fetchAll(); // récupère les résultats correspondants
-    } else {
-        // Si pas de recherche, récupère toutes les annonces disponibles
-        $annonces = $pdo->query('SELECT * FROM v_annonces_disponibles ORDER BY cree_le DESC')->fetchAll();
-    }
+  if (!empty($search)) {
+    // Prépare une requête pour rechercher dans plusieurs colonnes (titre, quartier, description)
+    $stmt = $pdo->prepare('SELECT * FROM v_annonces_disponibles WHERE titre LIKE ? OR quartier LIKE ? OR description LIKE ? ORDER BY cree_le DESC');
+    $stmt->execute(["%$search%", "%$search%", "%$search%"]);
+    $annonces = $stmt->fetchAll(); // récupère les résultats correspondants
+  } else {
+    // Si pas de recherche, récupère toutes les annonces disponibles
+    $annonces = $pdo->query('SELECT * FROM v_annonces_disponibles ORDER BY cree_le DESC')->fetchAll();
+  }
 } catch (PDOException $e) {
-    // En cas d'erreur de connexion ou de requête, retourner un tableau vide d'annonces
-    $annonces = [];
+  // En cas d'erreur de requête, retourner un tableau vide d'annonces
+  $annonces = [];
 }
 
 // Booléen indiquant si l'utilisateur est connecté (présence d'un user_id en session)
@@ -149,9 +139,8 @@ $userConnecte = !empty($_SESSION['user_id']);
     <li><a href="#footer-contact">Contacts</a></li>
     
     <?php if ($userConnecte): ?>
-      <!-- Affiche le prénom si présent en session, sinon un point d'exclamation -->
-      <?php $nomAffichage = !empty($_SESSION['user_prenom']) ? ' ' . htmlspecialchars($_SESSION['user_prenom']) : ' !' ?>
-      <li><span class="user-welcome">Bonjour<?= $nomAffichage ?></span></li>
+      <!-- Affiche le prénom si présent en session -->
+      <li><span class="user-welcome">Bonjour <?= htmlspecialchars($_SESSION['prenom'] ?? 'utilisateur') ?></span></li>
       <!-- Lien de déconnexion -->
       <li><a href="logout.php" class="nav-logout">Se déconnecter</a></li>
     <?php else: ?>

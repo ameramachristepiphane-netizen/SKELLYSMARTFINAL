@@ -2,23 +2,8 @@
 // Démarrage de la session pour gérer l'utilisateur après inscription
 session_start();
 
-// ── Configuration de connexion MySQL (PDO) ──────────────────────────────────
-// Hôte, nom de la base, utilisateur et mot de passe (à adapter en production)
-$host   = '127.0.0.1';
-$dbname = 'smarthome';
-$user   = 'root';
-$pass   = 'root';
-
-// Création d'une instance PDO avec gestion des exceptions
-try {
-    $pdo = new PDO("mysql:host=$host;dbname=$dbname;charset=utf8mb4", $user, $pass, [
-        PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
-        PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
-    ]);
-} catch (PDOException $e) {
-    // En cas d'erreur de connexion, on arrête l'exécution (affiche le message d'erreur)
-    die('Connexion impossible : ' . $e->getMessage());
-}
+// Utiliser la configuration centralisée de la base de données
+require_once __DIR__ . '/config.php';
 
 // Messages affichés à l'utilisateur
 $message = '';
@@ -74,6 +59,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $u = $newUser->fetch();
 
                 // Connexion automatique : on stocke les infos utiles en session
+                // Note: on n'autorise pas l'accès admin via l'inscription.
+                // Les administrateurs doivent se connecter via la page `connexion.php`.
                 $_SESSION['user_id'] = $u['id'];
                 $_SESSION['prenom']  = $u['prenom'];
                 $_SESSION['nom']     = $u['nom'];
