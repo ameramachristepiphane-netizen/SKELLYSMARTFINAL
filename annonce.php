@@ -31,7 +31,7 @@ if ($idAnnonce <= 0) {
 
 // Prépare et exécute la requête pour récupérer les détails de l'annonce
 $stmt = $pdo->prepare('
-    SELECT a.*, v.nom AS ville_nom, v.code_postal, CONCAT(u.prenom, " ", u.nom) AS proprietaire_nom 
+    SELECT a.*, v.nom AS ville_nom, v.code_postal, CONCAT(u.prenom, " ", u.nom) AS proprietaire_nom, u.telephone AS proprietaire_telephone
     FROM annonces a
     LEFT JOIN villes v ON a.ville_id = v.id
     LEFT JOIN utilisateurs u ON a.proprietaire_id = u.id
@@ -249,11 +249,17 @@ $userConnecte = !empty($_SESSION['user_id']);
         </div>
       </div>
 
-      <!-- Bouton de contact : change selon l'état de connexion -->
+      <!-- Numéro de téléphone du propriétaire -->
       <?php if ($userConnecte): ?>
-        <a href="contact_proprietaire.php?annonce_id=<?= $annonce['id'] ?>" class="btn-contact">✉️ Contacter le propriétaire</a>
+        <?php if (!empty($annonce['proprietaire_telephone'])): ?>
+          <a href="tel:<?= htmlspecialchars(preg_replace('/\s+/', '', $annonce['proprietaire_telephone'])) ?>" class="btn-contact">
+            📞 <?= htmlspecialchars($annonce['proprietaire_telephone']) ?>
+          </a>
+        <?php else: ?>
+          <p style="text-align:center; color:#8a9e99; font-size:0.95rem;">Numéro non disponible</p>
+        <?php endif; ?>
       <?php else: ?>
-        <a href="connexion.php" class="btn-contact">Se connecter pour réserver</a>
+        <a href="connexion.php" class="btn-contact">Se connecter pour voir le numéro</a>
       <?php endif; ?>
     </div>
   </aside>
