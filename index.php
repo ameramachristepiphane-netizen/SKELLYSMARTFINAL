@@ -2,8 +2,20 @@
 // Démarrage de la session pour gérer l'état d'authentification
 session_start();
 
-// Utiliser la configuration centralisée de la base de données
-require_once __DIR__ . '/config.php';
+// ── Connexion MySQL directe (PDO) ──────────────────────────────────
+$host   = '127.0.0.1';
+$dbname = 'smarthome';
+$user   = 'root';
+$pass   = 'root';
+
+try {
+    $pdo = new PDO("mysql:host=$host;dbname=$dbname;charset=utf8mb4", $user, $pass, [
+        PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
+        PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+    ]);
+} catch (PDOException $e) {
+    $annonces = [];
+}
 
 // Récupération du paramètre de recherche depuis la query string (GET)
 $search = isset($_GET['search']) ? trim($_GET['search']) : '';
