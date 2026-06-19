@@ -1,4 +1,7 @@
 <?php
+// setup_demo_annonces.php — script utilitaire pour insérer des annonces de démonstration
+// - utile en local pour remplir la base et tester l'interface
+// - exécuter une seule fois ; attention aux doublons dans la base
 session_start();
 
 // Vérifier que c'est un admin ou propriétaire

@@ -1,3 +1,10 @@
+/* style.css — Feuille de style principale pour SmartHome
+  Organisation :
+  - variables CSS dans :root pour couleurs/polices/radius
+  - layout global : navbar, hero, sections, footer
+  - composants : boutons, cards, tables, admin sidebar
+  Les commentaires dans ce fichier indiquent chaque section importante.
+*/
 /* Réinitialisation: box-sizing et marges/paddings par défaut */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
  
@@ -358,7 +365,7 @@ nav {
   font-weight: 600;
   margin: 0 0 10px;
   color: var(--dark-text);
-  min-height: 44px; /* 💡 AJOUT : Force le titre à occuper l'espace de 2 lignes */
+  min-height: 44px; /*  AJOUT : Force le titre à occuper l'espace de 2 lignes */
   display: flex;
   align-items: center; /* Centre verticalement si le titre n'a qu'une ligne */
 }

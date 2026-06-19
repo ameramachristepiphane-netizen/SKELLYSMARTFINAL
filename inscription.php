@@ -1,5 +1,10 @@
 <?php
-// Démarrage de la session pour gérer l'utilisateur après inscription
+// inscription.php — création de compte utilisateur
+// Ce fichier :
+// - démarre la session pour connecter automatiquement l'utilisateur après inscription
+// - valide le formulaire (email, mot de passe, confirmation)
+// - hache le mot de passe avec password_hash()
+// - insère l'utilisateur dans la table `utilisateurs` avec role = 'locataire'
 session_start();
 
 // ── Configuration de connexion MySQL (PDO) ──────────────────────────────────
@@ -33,13 +38,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     // Validation basique des champs
     if (!$prenom || !$nom || !$email || !$mdp || !$confirmPassword || !$profil) {
-        $error = 'Tous les champs sont obligatoires.'; // champs manquants
+      $error = 'Tous les champs sont obligatoires.'; // champs manquants
     } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-        $error = 'Adresse email invalide.'; // format email incorrect
+      $error = 'Adresse email invalide.'; // format email incorrect
     } elseif (strlen($mdp) < 8) {
-        $error = 'Le mot de passe doit contenir au moins 8 caractères.'; // trop court
+      $error = 'Le mot de passe doit contenir au moins 8 caractères.'; // trop court
     } elseif ($mdp !== $confirmPassword) {
-        $error = 'Les mots de passe ne correspondent pas.'; // confirmation incorrecte
+      $error = 'Les mots de passe ne correspondent pas.'; // confirmation incorrecte
     } else {
         // Mapping du libellé sélectionné vers la valeur attendue en base
         $situationMap = [
@@ -56,7 +61,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if ($check->fetch()) {
             $error = 'Cette adresse email est déjà utilisée.'; // email existant
         } else {
-            // Hachage sécurisé du mot de passe
+            // Hachage sécurisé du mot de passe (BCRYPT)
+            // Utiliser password_hash + password_verify pour l'authentification
             $hash = password_hash($mdp, PASSWORD_BCRYPT);
 
             // Préparation de l'insertion en base

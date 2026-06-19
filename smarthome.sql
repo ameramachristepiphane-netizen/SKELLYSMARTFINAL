@@ -1,13 +1,8 @@
--- phpMyAdmin SQL Dump
--- version 5.1.2
--- https://www.phpmyadmin.net/
---
--- Hôte : localhost:3306
--- Généré le : mer. 17 juin 2026 à 05:19
--- Version du serveur : 5.7.24
--- Version de PHP : 8.3.1
 
-SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
+-- smarthome.sql — Schéma et données initiales pour SmartHome
+-- Contient les instructions de création de tables et données de démonstration.
+-- Utilisez mysql < smarthome.sql pour réinitialiser la base en local.
+-- Vérifiez les préfixes et les encodages avant import.
 START TRANSACTION;
 SET time_zone = "+00:00";
 

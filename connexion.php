@@ -1,4 +1,10 @@
 <?php
+// connexion.php — page d'authentification
+// Gère :
+// - la connexion des utilisateurs
+// - la détection d'un administrateur (redirige vers admin.php)
+// - la mise en place des variables de session (`user_id`, `prenom`, `nom`, `role`)
+// Important : accepte des mots de passe hachés (password_verify) ou en clair
 session_start();
 
 $error = '';
@@ -13,6 +19,7 @@ if (!empty($_SESSION['user_id'])) {
     exit;
 }
 
+// Traitement du formulaire de connexion (POST)
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $email = trim($_POST['email'] ?? '');
     $password = $_POST['password'] ?? '';
@@ -36,6 +43,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             die('Erreur de connexion à la base de données.');
         }
 
+        // Recherche dans la table `utilisateurs`
         $stmt = $pdo->prepare('SELECT id, prenom, nom, mot_de_passe, role, actif FROM utilisateurs WHERE email = ? LIMIT 1');
         $stmt->execute([$email]);
         $userData = $stmt->fetch();
@@ -57,6 +65,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         // Si pas authentifié via `utilisateurs`, tenter sur la table `administrateur`
         if (!$authenticated) {
+          // Certains anciens admins pouvaient avoir des mots de passe non hachés
           $stmt2 = $pdo->prepare('SELECT id_admin AS id, prenom, nom, `mot de passe` AS mot_de_passe, role FROM administrateur WHERE email = ? LIMIT 1');
           $stmt2->execute([$email]);
           $adminData = $stmt2->fetch();

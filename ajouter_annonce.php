@@ -1,4 +1,8 @@
 <?php
+// ajouter_annonce.php — formulaire pour créer une nouvelle annonce
+// - accessible aux propriétaires (ou utilisateurs selon logique de l'app)
+// - traite l'upload d'image, la validation des champs et l'insertion en base
+// NOTE: ajoutez des vérifications supplémentaires côté serveur selon besoins.
 session_start();
 
 // ── Connexion MySQL (PDO) ────────────────────────────────────
@@ -85,7 +89,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $erreurs[] = "La photo ne doit pas dépasser 5 Mo.";
         } else {
             // Utiliser le dossier image/ existant du projet
-            $dossierUpload = __DIR__ . '/image/';
+           // Utiliser le dossier image/ existant du projet
+          $dossierUpload = __DIR__ . '/image/';
+
+          // Créer le dossier automatiquement s'il n'existe pas
+        if (!is_dir($dossierUpload)) {
+            mkdir($dossierUpload, 0755, true);
+        }
 
             // Nom unique pour éviter les conflits
             $nouveauNom = 'annonce_' . uniqid() . '.' . $extension;

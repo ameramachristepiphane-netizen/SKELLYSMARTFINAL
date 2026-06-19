@@ -1,4 +1,7 @@
 <?php
+// logout.php — déconnecte l'utilisateur en détruisant la session
+// - appelle session_start() puis session_unset()/session_destroy()
+// - redirige ensuite vers la page d'accueil ou de connexion
 // Démarre la session ou reprend la session existante
 session_start();
 

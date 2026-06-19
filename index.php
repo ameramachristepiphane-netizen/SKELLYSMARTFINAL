@@ -1,4 +1,12 @@
 <?php
+// index.php — Page d'accueil et moteur de recherche d'annonces
+// Ce fichier :
+// - démarre la session PHP
+// - se connecte à la base de données via PDO
+// - gère la recherche d'annonces (GET 'search')
+// - récupère les favoris et likes de l'utilisateur connecté
+// - affiche la liste des annonces
+// NOTE : les entrées utilisateur affichées sont échappées avec htmlspecialchars().
 // Démarrage de la session pour gérer l'état d'authentification
 session_start();
 
@@ -18,6 +26,7 @@ try {
 }
 
 // Récupération du paramètre de recherche depuis la query string (GET)
+// Exemple : index.php?search=paris
 $search = isset($_GET['search']) ? trim($_GET['search']) : '';
 
 try {

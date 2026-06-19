@@ -1,4 +1,8 @@
 <?php
+// annonce.php — page de détail d'une annonce
+// - affiche les informations complètes pour l'annonce passée via GET id
+// - affiche le propriétaire, les photos, la description et les contacts
+// - gère éventuellement l'envoi de message au propriétaire
 // Démarre la session pour gérer l'état utilisateur
 session_start();
 

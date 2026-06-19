@@ -1,4 +1,7 @@
 <?php
+// favoris.php — liste des annonces mises en favoris par l'utilisateur
+// - nécessite une session utilisateur
+// - récupère la table `favoris` et affiche les annonces correspondantes
 session_start();
 
 // Vérifier que l'utilisateur est connecté

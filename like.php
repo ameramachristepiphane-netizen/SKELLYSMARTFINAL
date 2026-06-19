@@ -1,4 +1,8 @@
 <?php
+// like.php — endpoint AJAX pour ajouter/retirer un favori (POST)
+// - reçoit 'action' = like|unlike et 'annonce_id'
+// - renvoie une réponse JSON { success: bool, liked: bool, message: string }
+// Important : vérifier la session et l'identité de l'utilisateur.
 session_start();
 
 // Vérifier que l'utilisateur est connecté

@@ -1,10 +1,14 @@
 <?php
+// profil.php — page de gestion du profil utilisateur
+// - accessible uniquement aux utilisateurs connectés
+// - permet de mettre à jour prénom, nom, email, téléphone
+// - permet de changer le mot de passe (vérification du mot de passe actuel requise)
 session_start();
 
 // Vérifier que l'utilisateur est connecté
 if (empty($_SESSION['user_id'])) {
-    header('Location: connexion.php');
-    exit;
+  header('Location: connexion.php');
+  exit;
 }
 
 // Connexion à la base de données
@@ -37,6 +41,7 @@ if (!$userData) {
 }
 
 // Traitement du formulaire de modification
+// Traitement du formulaire de modification du profil
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $prenom = trim($_POST['prenom'] ?? '');
     $nom = trim($_POST['nom'] ?? '');
@@ -52,27 +57,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
         $error = 'Adresse email invalide.';
     } else {
-        // Si changement de mot de passe
-        if (!empty($newPassword)) {
+          // Si changement de mot de passe : vérifier le mot de passe actuel puis hacher le nouveau
+          if (!empty($newPassword)) {
             if (!password_verify($currentPassword, $userData['mot_de_passe'])) {
-                $error = 'Le mot de passe actuel est incorrect.';
+              $error = 'Le mot de passe actuel est incorrect.';
             } elseif (strlen($newPassword) < 8) {
-                $error = 'Le nouveau mot de passe doit contenir au moins 8 caractères.';
+              $error = 'Le nouveau mot de passe doit contenir au moins 8 caractères.';
             } elseif ($newPassword !== $confirmPassword) {
-                $error = 'Les mots de passe ne correspondent pas.';
+              $error = 'Les mots de passe ne correspondent pas.';
             } else {
-                $hashedPassword = password_hash($newPassword, PASSWORD_BCRYPT);
-                $stmt = $pdo->prepare('UPDATE utilisateurs SET prenom = ?, nom = ?, email = ?, telephone = ?, mot_de_passe = ? WHERE id = ?');
-                $stmt->execute([$prenom, $nom, $email, $telephone, $hashedPassword, $userId]);
-                $_SESSION['prenom'] = $prenom;
-                $_SESSION['nom'] = $nom;
-                $message = 'Profil mis à jour avec succès.';
-                $userData['prenom'] = $prenom;
-                $userData['nom'] = $nom;
-                $userData['email'] = $email;
-                $userData['telephone'] = $telephone;
+              $hashedPassword = password_hash($newPassword, PASSWORD_BCRYPT);
+              $stmt = $pdo->prepare('UPDATE utilisateurs SET prenom = ?, nom = ?, email = ?, telephone = ?, mot_de_passe = ? WHERE id = ?');
+              $stmt->execute([$prenom, $nom, $email, $telephone, $hashedPassword, $userId]);
+              // Mettre à jour la session pour refléter les changements dans l'UI
+              $_SESSION['prenom'] = $prenom;
+              $_SESSION['nom'] = $nom;
+              $message = 'Profil mis à jour avec succès.';
+              $userData['prenom'] = $prenom;
+              $userData['nom'] = $nom;
+              $userData['email'] = $email;
+              $userData['telephone'] = $telephone;
             }
-        } else {
+          } else {
             // Mise à jour sans changement de mot de passe
             $stmt = $pdo->prepare('UPDATE utilisateurs SET prenom = ?, nom = ?, email = ?, telephone = ? WHERE id = ?');
             $stmt->execute([$prenom, $nom, $email, $telephone, $userId]);

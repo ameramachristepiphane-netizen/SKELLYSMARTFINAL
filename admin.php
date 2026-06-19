@@ -1,4 +1,11 @@
 <?php
+// admin.php — Tableau de bord administrateur
+// Fonctions :
+// - restreint aux utilisateurs avec `admin_id` en session
+// - gestion des utilisateurs (suppression)
+// - gestion des annonces (supprimer / modifier)
+// - gestion des messages (envoyer / supprimer)
+// - présente des statistiques et listes pour administration
 session_start();
 
 // ── Connexion MySQL ──────────────────────────────────────────
@@ -17,9 +24,10 @@ try {
 }
 
 // ── Vérification : admin uniquement ─────────────────────────
+// Redirige vers la page de connexion si l'utilisateur n'est pas admin
 if (empty($_SESSION['admin_id'])) {
-    header('Location: connexion.php');
-    exit;
+  header('Location: connexion.php');
+  exit;
 }
 $adminId = $_SESSION['admin_id'];
 $adminPrenom = $_SESSION['admin_prenom'];
@@ -27,6 +35,7 @@ $adminPrenom = $_SESSION['admin_prenom'];
 $flash = '';
 $flashType = 'success';
 
+// Traitement des actions administratives reçues en POST
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $action = $_POST['action'] ?? '';
 
